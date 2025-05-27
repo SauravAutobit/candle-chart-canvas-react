@@ -32,24 +32,33 @@ const TradingChart: React.FC<TradingChartProps> = ({
     // This effect runs when the component mounts or when candleData changes
     console.log('Initializing PixiJS application...');
     
-    // Step 1: Create a new PixiJS application
-    const app = new PIXI.Application({
-      view: canvasRef.current!, // Attach to our canvas element
-      width: width,             // Set chart width
-      height: height,           // Set chart height
-      backgroundColor: 0x1a1a1a, // Dark background (hex color)
-      antialias: true,          // Enable smooth edges
+    const initializePixiApp = async () => {
+      // Step 1: Create a new PixiJS application with await for proper initialization
+      const app = new PIXI.Application();
+      
+      // Initialize the application
+      await app.init({
+        canvas: canvasRef.current!, // Attach to our canvas element
+        width: width,             // Set chart width
+        height: height,           // Set chart height
+        backgroundColor: 0x1a1a1a, // Dark background (hex color)
+        antialias: true,          // Enable smooth edges
+      });
+
+      // Store the app reference for cleanup later
+      appRef.current = app;
+      console.log('PixiJS application created successfully');
+
+      // Step 2: Draw the candlesticks using our utility function
+      if (candleData && candleData.length > 0) {
+        console.log(`Drawing ${candleData.length} candlesticks...`);
+        drawCandlesticks(candleData, app);
+      }
+    };
+
+    initializePixiApp().catch((error) => {
+      console.error('Failed to initialize PixiJS application:', error);
     });
-
-    // Store the app reference for cleanup later
-    appRef.current = app;
-    console.log('PixiJS application created successfully');
-
-    // Step 2: Draw the candlesticks using our utility function
-    if (candleData && candleData.length > 0) {
-      console.log(`Drawing ${candleData.length} candlesticks...`);
-      drawCandlesticks(candleData, app);
-    }
 
     // Step 3: Cleanup function - runs when component unmounts or dependencies change
     return () => {
