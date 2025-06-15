@@ -9,13 +9,13 @@ interface CandleData {
   close: number;
 }
 
-export const drawCandlesticks = (candleData: CandleData[], app: PIXI.Application) => {
+export const drawCandlesticks = (candleData: CandleData[], app: PIXI.Application): PIXI.Container => {
   console.log('Starting to draw candlesticks...');
   
   // Step 1: Validate input data
   if (!candleData || candleData.length === 0) {
     console.log('No candle data provided');
-    return;
+    return new PIXI.Container();
   }
 
   // Step 2: Set up chart dimensions and spacing
@@ -49,7 +49,7 @@ export const drawCandlesticks = (candleData: CandleData[], app: PIXI.Application
   
   // Step 5: Draw a background grid for better readability
   const grid = new PIXI.Graphics();
-  grid.lineStyle(1, 0x333333, 0.5);
+  grid.stroke({ width: 1, color: 0x333333, alpha: 0.5 });
   
   // Draw horizontal grid lines
   const priceStep = priceRange / 5;
@@ -97,20 +97,19 @@ export const drawCandlesticks = (candleData: CandleData[], app: PIXI.Application
     const candleGraphic = new PIXI.Graphics();
     
     // Step 6a: Draw the wick (vertical line from high to low)
-    candleGraphic.lineStyle(1, isBullish ? 0x4CAF50 : 0xF44336);
+    candleGraphic.stroke({ width: 1, color: isBullish ? 0x4CAF50 : 0xF44336 });
     candleGraphic.moveTo(x + candleWidth / 2, highY);
     candleGraphic.lineTo(x + candleWidth / 2, lowY);
     
     // Step 6b: Draw the candle body (rectangle between open and close)
     const bodyColor = isBullish ? 0x4CAF50 : 0xF44336;  // Green for bullish, red for bearish
-    candleGraphic.beginFill(bodyColor);
-    candleGraphic.drawRect(
+    candleGraphic.fill(bodyColor);
+    candleGraphic.rect(
       x,  // x position
       isBullish ? closeY : openY,  // y position (top of body)
       candleWidth,  // width of rectangle
       Math.abs(closeY - openY) || 1  // height (at least 1px for flat candles)
     );
-    candleGraphic.endFill();
     
     // Add this candle to the container
     container.addChild(candleGraphic);
@@ -120,4 +119,7 @@ export const drawCandlesticks = (candleData: CandleData[], app: PIXI.Application
   app.stage.addChild(container);
   
   console.log('Candlesticks drawn successfully');
+  
+  // Return the container so it can be used for interactions
+  return container;
 };
