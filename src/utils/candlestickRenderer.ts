@@ -18,17 +18,20 @@ export const drawCandlesticks = (candleData: CandleData[], app: PIXI.Application
     return new PIXI.Container();
   }
 
-  // Step 2: Set up chart dimensions and spacing
-  const candleWidth = 8;        // Width of each candlestick body
-  const candleSpacing = 12;     // Total space allocated per candle (including gaps)
-  const chartPadding = 40;      // Padding around the chart edges
-  const chartWidth = app.screen.width - (chartPadding * 2);
+  // Step 2: Set up chart dimensions - THIS IS THE KEY CHANGE
+  // We create a much larger canvas that holds ALL the data
+  const candleWidth = 12;        // Width of each candlestick body
+  const candleSpacing = 16;      // Total space allocated per candle
+  const chartPadding = 50;       // Padding around the chart edges
+  
+  // Calculate the total width needed for ALL candles (this is our "world" size)
+  const totalDataWidth = candleData.length * candleSpacing;
   const chartHeight = app.screen.height - (chartPadding * 2);
 
-  console.log(`Chart dimensions: ${chartWidth}x${chartHeight}`);
+  console.log(`Total data width: ${totalDataWidth}px for ${candleData.length} candles`);
+  console.log(`Chart height: ${chartHeight}px`);
 
   // Step 3: Calculate price range for scaling
-  // Find the highest and lowest prices across all candles
   const allPrices = candleData.flatMap(candle => [candle.open, candle.high, candle.low, candle.close]);
   const maxPrice = Math.max(...allPrices);
   const minPrice = Math.min(...allPrices);
@@ -39,52 +42,59 @@ export const drawCandlesticks = (candleData: CandleData[], app: PIXI.Application
   // Calculate how many pixels represent one unit of price
   const priceScale = priceRange > 0 ? chartHeight / priceRange : 1;
 
-  // Step 4: Clear any existing graphics from previous renders
+  // Step 4: Clear any existing graphics
   app.stage.removeChildren();
   
-  // Create a graphics container to hold all candlesticks
-  const container = new PIXI.Container();
-  container.x = chartPadding;
-  container.y = chartPadding;
+  // Create the main container - this is our "world" that contains all data
+  const worldContainer = new PIXI.Container();
+  worldContainer.x = chartPadding;
+  worldContainer.y = chartPadding;
   
-  // Step 5: Draw a background grid for better readability
+  // Step 5: Draw background grid that spans the entire data width
   const grid = new PIXI.Graphics();
-  grid.stroke({ width: 1, color: 0x333333, alpha: 0.5 });
+  grid.stroke({ width: 1, color: 0x333333, alpha: 0.3 });
   
-  // Draw horizontal grid lines
-  const priceStep = priceRange / 5;
-  for (let i = 0; i <= 5; i++) {
+  // Horizontal grid lines (price levels)
+  const priceStep = priceRange / 10;
+  for (let i = 0; i <= 10; i++) {
     const price = minPrice + (priceStep * i);
     const y = chartHeight - ((price - minPrice) * priceScale);
     grid.moveTo(0, y);
-    grid.lineTo(chartWidth, y);
+    grid.lineTo(totalDataWidth, y); // Extend across all data
     
-    // Add price labels
-    const priceLabel = new PIXI.Text({
-      text: price.toFixed(2),
-      style: {
-        fill: 0x999999,
-        fontSize: 10,
-      }
-    });
-    priceLabel.x = -35;
-    priceLabel.y = y - 7;
-    container.addChild(priceLabel);
+    // Add price labels every few lines
+    if (i % 2 === 0) {
+      const priceLabel = new PIXI.Text({
+        text: price.toFixed(2),
+        style: {
+          fill: 0x999999,
+          fontSize: 12,
+        }
+      });
+      priceLabel.x = -40;
+      priceLabel.y = y - 8;
+      worldContainer.addChild(priceLabel);
+    }
   }
   
-  // Add grid to container
-  container.addChild(grid);
+  // Vertical grid lines (time intervals)
+  const timeStep = Math.max(1, Math.floor(candleData.length / 20));
+  for (let i = 0; i < candleData.length; i += timeStep) {
+    const x = i * candleSpacing;
+    grid.moveTo(x, 0);
+    grid.lineTo(x, chartHeight);
+  }
   
-  // Step 6: Draw each candlestick
+  worldContainer.addChild(grid);
+  
+  // Step 6: Draw ALL candlesticks at once (this is the full dataset on our canvas)
+  console.log(`Drawing all ${candleData.length} candlesticks...`);
+  
   candleData.forEach((candle, index) => {
-    // Cap the visible candlesticks to fit within chart width
-    if (index * candleSpacing > chartWidth) return;
-    
-    // Calculate x position of this candle
+    // Calculate x position of this candle in our world coordinates
     const x = index * candleSpacing;
     
     // Calculate y positions for OHLC values
-    // Note that in computer graphics y=0 is at the top, so we invert the values
     const openY = chartHeight - ((candle.open - minPrice) * priceScale);
     const highY = chartHeight - ((candle.high - minPrice) * priceScale);
     const lowY = chartHeight - ((candle.low - minPrice) * priceScale);
@@ -96,30 +106,35 @@ export const drawCandlesticks = (candleData: CandleData[], app: PIXI.Application
     // Create a graphics object for this candle
     const candleGraphic = new PIXI.Graphics();
     
-    // Step 6a: Draw the wick (vertical line from high to low)
-    candleGraphic.stroke({ width: 1, color: isBullish ? 0x4CAF50 : 0xF44336 });
+    // Draw the wick (high-low line)
+    candleGraphic.stroke({ width: 2, color: isBullish ? 0x4CAF50 : 0xF44336 });
     candleGraphic.moveTo(x + candleWidth / 2, highY);
     candleGraphic.lineTo(x + candleWidth / 2, lowY);
     
-    // Step 6b: Draw the candle body (rectangle between open and close)
-    const bodyColor = isBullish ? 0x4CAF50 : 0xF44336;  // Green for bullish, red for bearish
+    // Draw the candle body (open-close rectangle)
+    const bodyColor = isBullish ? 0x4CAF50 : 0xF44336;
     candleGraphic.fill(bodyColor);
     candleGraphic.rect(
-      x,  // x position
-      isBullish ? closeY : openY,  // y position (top of body)
-      candleWidth,  // width of rectangle
-      Math.abs(closeY - openY) || 1  // height (at least 1px for flat candles)
+      x,
+      Math.min(openY, closeY),
+      candleWidth,
+      Math.max(Math.abs(closeY - openY), 1)
     );
     
-    // Add this candle to the container
-    container.addChild(candleGraphic);
+    // Add this candle to the world container
+    worldContainer.addChild(candleGraphic);
   });
   
-  // Add the container to the stage
-  app.stage.addChild(container);
+  // Step 7: Position the camera to show the most recent data initially
+  // This simulates starting at the "right" side of the chart like TradingView
+  const initialCameraX = Math.max(0, totalDataWidth - app.screen.width + chartPadding * 2);
+  worldContainer.x = -initialCameraX + chartPadding;
   
-  console.log('Candlesticks drawn successfully');
+  // Add the world container to the stage
+  app.stage.addChild(worldContainer);
   
-  // Return the container so it can be used for interactions
-  return container;
+  console.log(`Candlesticks drawn successfully. World size: ${totalDataWidth}x${chartHeight}`);
+  console.log(`Initial camera position: ${initialCameraX}`);
+  
+  return worldContainer;
 };
