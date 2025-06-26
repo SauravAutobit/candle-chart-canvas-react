@@ -258,12 +258,13 @@ const CandlestickCharts: React.FC<Props> = ({
     chartRef.current.innerHTML = "";
 
     const hasAroon = indicator === "Aroon";
-    const paneHeight = hasAroon ? height * 0.6 : height;
-    const aroonHeight = hasAroon ? height * 0.4 : 0;
+    const aroonHeight = hasAroon ? 100 : 0;
+    const xAxisHeight = 30;
+    const totalHeight = height + xAxisHeight + aroonHeight;
 
     const app = new PIXI.Application({
       width,
-      height: paneHeight + aroonHeight + 30,
+      height: totalHeight,
       backgroundColor: 0x000000,
       antialias: true,
     });
@@ -308,7 +309,7 @@ const CandlestickCharts: React.FC<Props> = ({
             new Date(d.timestamp).toLocaleDateString(),
             { fontSize: 10, fill: 0xffffff }
           );
-          label.position.set(x - 10, height + 5);
+          label.position.set(x - 10, totalHeight - xAxisHeight + 5);
           axisContainer.addChild(label);
         }
       }
@@ -597,7 +598,7 @@ const CandlestickCharts: React.FC<Props> = ({
         const down = aroon.down.slice(startIndex, endIndex);
 
         const yForAroon = (val: number) =>
-          height + 30 - (val / 100) * paneHeight;
+          height + aroonHeight - (val / 100) * aroonHeight;
 
         // Adjust app height only if not already increased
         if (app.view.height !== height + 30 + paneHeight) {
