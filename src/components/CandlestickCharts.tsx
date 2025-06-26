@@ -219,13 +219,51 @@ const CandlestickCharts: React.FC<Props> = ({
     return result;
   }
 
+  function calculateAroon(
+    data: CandleData[],
+    period = 14
+  ): {
+    up: number[];
+    down: number[];
+  } {
+    const aroonUp: number[] = [];
+    const aroonDown: number[] = [];
+
+    for (let i = 0; i < data.length; i++) {
+      if (i < period - 1) {
+        aroonUp.push(NaN);
+        aroonDown.push(NaN);
+        continue;
+      }
+
+      const slice = data.slice(i - period + 1, i + 1);
+      const highs = slice.map((d) => d.high);
+      const lows = slice.map((d) => d.low);
+
+      const highestIndex = highs.lastIndexOf(Math.max(...highs));
+      const lowestIndex = lows.lastIndexOf(Math.min(...lows));
+
+      const up = ((period - highestIndex) / period) * 100;
+      const down = ((period - lowestIndex) / period) * 100;
+
+      aroonUp.push(up);
+      aroonDown.push(down);
+    }
+
+    return { up: aroonUp, down: aroonDown };
+  }
+
   useEffect(() => {
     if (!chartRef.current) return;
     chartRef.current.innerHTML = "";
 
+    const hasAroon = indicator === "Aroon";
+    const paneHeight = hasAroon ? height * 0.6 : height;
+    const aroonHeight = hasAroon ? height * 0.4 : 0;
+
     const app = new PIXI.Application({
       width,
-      height: height + 30,
+      height: paneHeight + aroonHeight + 30,
       backgroundColor: 0x000000,
       antialias: true,
     });
@@ -234,9 +272,12 @@ const CandlestickCharts: React.FC<Props> = ({
     chartRef.current.appendChild(app.view);
 
     const chartContainer = new PIXI.Container();
+    const aroonContainer = new PIXI.Container();
+
     const graphics = new PIXI.Graphics();
     chartContainer.addChild(graphics);
     app.stage.addChild(chartContainer);
+    app.stage.addChild(aroonContainer);
 
     const axisContainer = new PIXI.Container();
     app.stage.addChild(axisContainer);
@@ -278,6 +319,8 @@ const CandlestickCharts: React.FC<Props> = ({
       const offsetX = offsetXRef.current;
 
       graphics.clear();
+      aroonContainer.removeChildren();
+
       axisContainer.removeChildren();
       crosshair.clear();
       tooltip.visible = false;
@@ -545,6 +588,69 @@ const CandlestickCharts: React.FC<Props> = ({
           }
         });
       }
+
+      // If Aroon is selected, draw it in a separate pane below the main chart
+      if (indicator === "Aroon") {
+        const paneHeight = 100; // height for Aroon pane
+        const aroon = calculateAroon(data);
+        const up = aroon.up.slice(startIndex, endIndex);
+        const down = aroon.down.slice(startIndex, endIndex);
+
+        const yForAroon = (val: number) =>
+          height + 30 - (val / 100) * paneHeight;
+
+        // Adjust app height only if not already increased
+        if (app.view.height !== height + 30 + paneHeight) {
+          app.renderer.resize(width, height + 30 + paneHeight);
+        }
+
+        // Aroon Up line (Orange)
+        graphics.lineStyle(1.5, 0xffa500);
+        up.forEach((val, i) => {
+          if (isNaN(val)) return;
+          const x = xFor(startIndex + i);
+          const y = yForAroon(val);
+          if (i === 0 || isNaN(up[i - 1])) {
+            graphics.moveTo(x, y);
+          } else {
+            graphics.lineTo(x, y);
+          }
+        });
+
+        // Aroon Down line (Blue)
+        graphics.lineStyle(1.5, 0x007aff);
+        down.forEach((val, i) => {
+          if (isNaN(val)) return;
+          const x = xFor(startIndex + i);
+          const y = yForAroon(val);
+          if (i === 0 || isNaN(down[i - 1])) {
+            graphics.moveTo(x, y);
+          } else {
+            graphics.lineTo(x, y);
+          }
+        });
+
+        // Aroon Y-axis (right side, percentage)
+        const step = 20;
+        for (let v = 0; v <= 100; v += step) {
+          const y = yForAroon(v);
+          const label = new PIXI.Text(`${v.toFixed(0)}%`, {
+            fontSize: 10,
+            fill: 0xffffff,
+          });
+          label.anchor.set(1, 0.5);
+          label.position.set(width - 4, y);
+          axisContainer.addChild(label);
+
+          graphics.lineStyle(0.5, 0x666666, 0.3);
+          graphics.moveTo(0, y);
+          graphics.lineTo(width, y);
+        }
+      }
+
+      if (indicator !== "Aroon" && app.view.height !== height + 30) {
+        app.renderer.resize(width, height + 30);
+      }
     };
 
     redraw();
@@ -623,6 +729,7 @@ const CandlestickCharts: React.FC<Props> = ({
         <option value="Parabolic SAR">Parabolic SAR</option>
         <option value="SuperTrend">SuperTrend</option>
         <option value="Hull MA">Hull MA</option>
+        <option value="Aroon">Aroon</option>
       </select>
 
       <div ref={chartRef} style={{ width, height: height + 30 }} />
@@ -631,4 +738,3 @@ const CandlestickCharts: React.FC<Props> = ({
 };
 
 export default CandlestickCharts;
-
