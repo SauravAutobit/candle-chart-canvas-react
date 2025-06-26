@@ -2,6 +2,7 @@ import React from "react";
 import TradingChart from "@/components/TradingChart";
 import { sampleCandleData } from "@/utils/sampleTradingData";
 import CandlestickCharts from "@/components/CandlestickCharts";
+import MultiChartLayout from "@/components/MultiChartLayout";
 
 type CandleData = {
   open: number;
@@ -37,7 +38,7 @@ const generateRandomCandlestickData = (count: number): CandleData[] => {
 };
 
 const Index = () => {
-  const data = generateRandomCandlestickData(1500);
+  const data = generateRandomCandlestickData(150);
   return (
     <div className="min-h-screen bg-gray-900 p-4">
       <div className="max-w-6xl mx-auto">
@@ -59,7 +60,10 @@ const Index = () => {
             width={800} 
             height={500} 
           /> */}
-          <CandlestickCharts data={data} width={1000} height={600} />
+          {/* <CandlestickCharts data={data} width={1000} height={600} /> */}
+          <div>
+            <MultiChartLayout data={[data, data, data, data, data, data]} />
+          </div>
         </div>
 
         <div className="mt-8 text-gray-400">
