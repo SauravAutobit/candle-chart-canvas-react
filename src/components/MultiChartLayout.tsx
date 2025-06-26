@@ -58,8 +58,8 @@ const MultiChartLayout: React.FC<Props> = ({ data }) => {
           <div key={i} className="bg-gray-800 rounded p-2">
             <CandlestickCharts
               data={data[i % data.length]} // reuse or rotate data
-              width={1000}
-              height={600}
+              // width={1000}
+              // height={600}
             />
           </div>
         ))}

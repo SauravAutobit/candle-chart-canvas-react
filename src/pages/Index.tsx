@@ -3,6 +3,7 @@ import TradingChart from "@/components/TradingChart";
 import { sampleCandleData } from "@/utils/sampleTradingData";
 import CandlestickCharts from "@/components/CandlestickCharts";
 import MultiChartLayout from "@/components/MultiChartLayout";
+import WindowManager from "@/components/WindowManager";
 
 type CandleData = {
   open: number;
@@ -64,6 +65,7 @@ const Index = () => {
           <div>
             <MultiChartLayout data={[data, data, data, data, data, data]} />
           </div>
+          {/* <WindowManager data={data} /> */}
         </div>
 
         <div className="mt-8 text-gray-400">

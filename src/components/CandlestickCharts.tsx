@@ -29,22 +29,43 @@ type ChartType = (typeof chartTypes)[number];
 
 interface Props {
   data: CandleData[];
-  width?: number;
-  height?: number;
+  // width?: number;
+  // height?: number;
 }
 
 const CandlestickCharts: React.FC<Props> = ({
   data,
-  width = 800,
-  height = 500,
+  // width = 800,
+  // height = 500,
 }) => {
   const [chartType, setChartType] = useState<ChartType>("Candlestick");
   const [indicator, setIndicator] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [dimensions, setDimensions] = useState({ width: 800, height: 500 });
 
   const chartRef = useRef<HTMLDivElement | null>(null);
   const appRef = useRef<PIXI.Application | null>(null);
   const scaleRef = useRef(1);
   const offsetXRef = useRef(0);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const observer = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        const { width, height } = entry.contentRect;
+        setDimensions({
+          width,
+          height: height - 30, // minus x-axis height
+        });
+      }
+    });
+
+    observer.observe(el);
+
+    return () => observer.disconnect();
+  }, []);
 
   function calculateSMA(data: CandleData[], period: number): (number | null)[] {
     const sma: (number | null)[] = [];
@@ -254,6 +275,9 @@ const CandlestickCharts: React.FC<Props> = ({
   }
 
   useEffect(() => {
+    const width = dimensions.width;
+    const height = dimensions.height;
+
     if (!chartRef.current) return;
     chartRef.current.innerHTML = "";
 
@@ -705,10 +729,10 @@ const CandlestickCharts: React.FC<Props> = ({
       app.destroy(true, true);
       if (chartRef.current) chartRef.current.innerHTML = "";
     };
-  }, [data, width, height, chartType, indicator]);
+  }, [data, dimensions, chartType, indicator]);
 
   return (
-    <div>
+    <div ref={containerRef} className="w-full h-full">
       <select
         style={{ marginBottom: 10 }}
         value={chartType}
@@ -733,7 +757,10 @@ const CandlestickCharts: React.FC<Props> = ({
         <option value="Aroon">Aroon</option>
       </select>
 
-      <div ref={chartRef} style={{ width, height: height + 30 }} />
+      <div
+        ref={chartRef}
+        style={{ width: "100%", height: dimensions.height + 30 }}
+      />
     </div>
   );
 };
