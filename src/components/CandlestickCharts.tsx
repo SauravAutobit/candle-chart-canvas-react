@@ -733,7 +733,7 @@ const CandlestickCharts: React.FC<Props> = ({
 
   return (
     <div ref={containerRef} className="w-full h-full">
-      <select
+      {/* <select
         style={{ marginBottom: 10 }}
         value={chartType}
         onChange={(e) => setChartType(e.target.value as ChartType)}
@@ -755,7 +755,7 @@ const CandlestickCharts: React.FC<Props> = ({
         <option value="SuperTrend">SuperTrend</option>
         <option value="Hull MA">Hull MA</option>
         <option value="Aroon">Aroon</option>
-      </select>
+      </select> */}
 
       <div
         ref={chartRef}
