@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from "react";
 import CandlestickCharts from "./CandlestickCharts";
-import { registerLayoutHandler, LayoutType } from "./ChartManager";
+import {
+  registerLayoutHandler,
+  LayoutType,
+  getChartConfig,
+  parseNestedPaneSizes,
+} from "./ChartManager";
 import ResizableChart from "./ResizableChart";
 import ResizablePane from "./ResizablePane";
 
@@ -15,6 +20,9 @@ const MultiChartLayout: React.FC<Props> = ({ data }) => {
     registerLayoutHandler(setLayout);
   }, []);
 
+  const { resizable, sizes } = getChartConfig(layout);
+  console.log("check multichart");
+
   const renderLayout = () => {
     const getChart = (i: number) => (
       <div key={i} className="bg-gray-800 rounded w-full h-full">
@@ -22,55 +30,100 @@ const MultiChartLayout: React.FC<Props> = ({ data }) => {
       </div>
     );
 
+    const { horizontalSizes, verticalSizes, nestedHorizontal, nestedVertical } =
+      parseNestedPaneSizes(layout, sizes);
+
     switch (layout) {
       case "1":
         return <div className="w-full h-full">{getChart(0)}</div>;
 
       case "2H":
         return (
-          <ResizablePane direction="horizontal">
+          // <ResizablePane direction="horizontal">
+          //   {[getChart(0), getChart(1)]}
+          // </ResizablePane>
+          <ResizablePane
+            direction="horizontal"
+            resizable={resizable}
+            initialSizes={sizes}
+          >
             {[getChart(0), getChart(1)]}
           </ResizablePane>
         );
 
       case "2V":
         return (
-          <ResizablePane direction="vertical">
+          <ResizablePane
+            direction="vertical"
+            resizable={resizable}
+            initialSizes={sizes}
+          >
             {[getChart(0), getChart(1)]}
           </ResizablePane>
         );
 
       case "3H":
         return (
-          <ResizablePane direction="horizontal">
+          <ResizablePane
+            direction="horizontal"
+            resizable={resizable}
+            initialSizes={sizes}
+          >
             {[getChart(0), getChart(1), getChart(2)]}
           </ResizablePane>
         );
 
       case "3V":
         return (
-          <ResizablePane direction="vertical">
+          <ResizablePane
+            direction="vertical"
+            resizable={resizable}
+            initialSizes={sizes}
+          >
             {[getChart(0), getChart(1), getChart(2)]}
           </ResizablePane>
         );
 
-      case "3L-R2":
+      case "3L-R2": {
+        const horizontalSizes =
+          sizes?.length === 3 ? [sizes[0], 100 - sizes[0]] : undefined;
+        const verticalSizes =
+          sizes?.length === 3 ? [sizes[1], sizes[2]] : undefined;
         return (
-          <ResizablePane direction="horizontal">
+          <ResizablePane
+            direction="horizontal"
+            resizable={resizable}
+            initialSizes={horizontalSizes}
+          >
             {[
               getChart(0),
-              <ResizablePane direction="vertical" key="right">
+              <ResizablePane
+                direction="vertical"
+                resizable={resizable}
+                initialSizes={verticalSizes}
+                key="right"
+              >
                 {[getChart(1), getChart(2)]}
               </ResizablePane>,
             ]}
           </ResizablePane>
         );
+      }
 
       case "3R-L2":
         return (
-          <ResizablePane direction="horizontal">
+          <ResizablePane
+            direction="horizontal"
+            resizable={resizable}
+            initialSizes={horizontalSizes}
+          >
             {[
-              <ResizablePane direction="vertical" key="left">
+              <ResizablePane
+                direction="vertical"
+                resizable={resizable}
+                initialSizes={verticalSizes}
+                key="left"
+              >
                 {[getChart(0), getChart(1)]}
               </ResizablePane>,
               getChart(2),

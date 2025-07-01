@@ -66,7 +66,7 @@ const CandlestickCharts: React.FC<Props> = ({
 
     return () => observer.disconnect();
   }, []);
-
+  console.log("check candles");
   function calculateSMA(data: CandleData[], period: number): (number | null)[] {
     const sma: (number | null)[] = [];
     for (let i = 0; i < data.length; i++) {

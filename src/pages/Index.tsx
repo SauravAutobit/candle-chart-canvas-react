@@ -1,7 +1,12 @@
 import { useEffect } from "react";
 import MultiChartLayout from "@/components/MultiChartLayout";
 import WindowManager from "@/components/WindowManager";
-import { isLayoutHandlerReady, setLayout } from "@/components/ChartManager";
+import {
+  isLayoutHandlerReady,
+  setInitialPaneSizes,
+  setLayout,
+  setResizableCharts,
+} from "@/components/ChartManager";
 
 type CandleData = {
   open: number;
@@ -38,11 +43,12 @@ const generateRandomCandlestickData = (count: number): CandleData[] => {
 
 const Index = () => {
   const data = generateRandomCandlestickData(150);
-
   useEffect(() => {
     const trySetLayout = () => {
       if (isLayoutHandlerReady()) {
-        setLayout("4");
+        setResizableCharts(true);
+        // setInitialPaneSizes("3R-L2", [20, 70, 30]);
+        setLayout("2H");
       } else {
         setTimeout(trySetLayout, 100); // Retry every 100ms
       }

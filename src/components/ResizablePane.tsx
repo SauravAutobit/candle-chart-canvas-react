@@ -3,18 +3,26 @@ import React, { useRef, useState } from "react";
 interface ResizablePaneProps {
   direction: "horizontal" | "vertical";
   children: React.ReactNode[]; // Support more than two children
-  initialSplit?: number; // Optional default split, applies only if 2 children
+  resizable?: boolean;
+  initialSizes?: number[]; // Optional default split, applies only if 2 children
 }
 
 const ResizablePane: React.FC<ResizablePaneProps> = ({
   direction,
   children,
+  initialSizes,
+  resizable,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const isHorizontal = direction === "horizontal";
-  const [sizes, setSizes] = useState<number[]>(
-    Array(children.length).fill(100 / children.length)
-  );
+  const [sizes, setSizes] = useState(() => {
+    if (initialSizes && initialSizes.length === children.length)
+      return initialSizes;
+
+    // Default: equal split
+    const percent = 100 / children.length;
+    return Array(children.length).fill(percent);
+  });
 
   const onMouseDown = (index: number, e: React.MouseEvent) => {
     e.preventDefault();
@@ -63,12 +71,12 @@ const ResizablePane: React.FC<ResizablePaneProps> = ({
             {child}
           </div>
 
-          {index < children.length - 1 && (
+          {resizable !== false && index < children.length - 1 && (
             <div
-              onMouseDown={(e) => onMouseDown(index, e)}
               className={`${
                 isHorizontal ? "w-1 cursor-col-resize" : "h-1 cursor-row-resize"
-              } bg-gray-600 hover:bg-gray-400`}
+              } bg-gray-500 hover:bg-gray-300`}
+              onMouseDown={(e) => onMouseDown(index, e)}
             />
           )}
         </React.Fragment>

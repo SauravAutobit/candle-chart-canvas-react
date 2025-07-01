@@ -44,3 +44,72 @@ export const setLayout = (layout: LayoutType) => {
 };
 
 export const isLayoutHandlerReady = () => isRegistered;
+
+// ChartManager.ts
+let resizingAllowed = true;
+const initialPaneSizes: Record<string, number[]> = {};
+
+export function setResizableCharts(value: boolean) {
+  resizingAllowed = value;
+}
+
+export function setInitialPaneSizes(layout: LayoutType, sizes: number[]) {
+  initialPaneSizes[layout] = sizes;
+}
+
+export function getChartConfig(layout: LayoutType) {
+  return {
+    resizable: resizingAllowed,
+    sizes: initialPaneSizes[layout] || undefined,
+  };
+}
+
+export function parseNestedPaneSizes(
+  layout: LayoutType,
+  sizes?: number[]
+): {
+  horizontalSizes?: number[];
+  verticalSizes?: number[];
+  nestedHorizontal?: number[];
+  nestedVertical?: number[];
+} {
+  if (!sizes) return {};
+
+  switch (layout) {
+    case "3L-R2": {
+      const [leftWidth, topHeight, bottomHeight] = sizes;
+      return {
+        horizontalSizes: [leftWidth, 100 - leftWidth],
+        verticalSizes: [topHeight, bottomHeight],
+      };
+    }
+
+    case "3R-L2": {
+      const [rightWidth, topHeight, bottomHeight] = sizes;
+      return {
+        horizontalSizes: [100 - rightWidth, rightWidth],
+        verticalSizes: [topHeight, bottomHeight],
+      };
+    }
+
+    case "4L-R3": {
+      const [leftWidth, topRight, midRight, bottomRight] = sizes;
+      return {
+        horizontalSizes: [leftWidth, 100 - leftWidth],
+        verticalSizes: [topRight, midRight, bottomRight],
+      };
+    }
+
+    case "4T2-B2": {
+      const [topLeft, topRight, bottomLeft, bottomRight] = sizes;
+      return {
+        verticalSizes: [50, 50], // or derive if dynamic
+        nestedHorizontal: [topLeft, topRight],
+        nestedVertical: [bottomLeft, bottomRight],
+      };
+    }
+
+    default:
+      return {};
+  }
+}
