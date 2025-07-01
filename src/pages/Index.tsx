@@ -42,7 +42,7 @@ const Index = () => {
   useEffect(() => {
     const trySetLayout = () => {
       if (isLayoutHandlerReady()) {
-        setLayout("4T2-B2");
+        setLayout("4");
       } else {
         setTimeout(trySetLayout, 100); // Retry every 100ms
       }
@@ -52,7 +52,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gray-900">
       <div
-        className="bg-gray-800 rounded-lg shadow-xl h-screen overflow-hidden"
+        className="bg-gray-800 rounded-lg shadow-xl w-full h-screen overflow-hidden"
         style={{ cursor: "crosshair" }}
       >
         <MultiChartLayout data={[data, data, data, data, data, data]} />

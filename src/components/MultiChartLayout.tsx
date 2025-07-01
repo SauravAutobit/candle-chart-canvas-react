@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import CandlestickCharts from "./CandlestickCharts";
 import { registerLayoutHandler, LayoutType } from "./ChartManager";
+import ResizableChart from "./ResizableChart";
+import ResizablePane from "./ResizablePane";
 
 interface Props {
   data: any[];
@@ -26,257 +28,360 @@ const MultiChartLayout: React.FC<Props> = ({ data }) => {
 
       case "2H":
         return (
-          <div className="grid grid-cols-2 w-full h-full gap-1">
-            {[0, 1].map(getChart)}
-          </div>
+          <ResizablePane direction="horizontal">
+            {[getChart(0), getChart(1)]}
+          </ResizablePane>
         );
 
       case "2V":
         return (
-          <div className="grid grid-rows-2 w-full h-full gap-1">
-            {[0, 1].map(getChart)}
-          </div>
+          <ResizablePane direction="vertical">
+            {[getChart(0), getChart(1)]}
+          </ResizablePane>
         );
 
       case "3H":
         return (
-          <div className="grid grid-cols-3 w-full h-full gap-1">
-            {[0, 1, 2].map(getChart)}
-          </div>
+          <ResizablePane direction="horizontal">
+            {[getChart(0), getChart(1), getChart(2)]}
+          </ResizablePane>
         );
 
       case "3V":
         return (
-          <div className="grid grid-rows-3 w-full h-full gap-1">
-            {[0, 1, 2].map(getChart)}
-          </div>
+          <ResizablePane direction="vertical">
+            {[getChart(0), getChart(1), getChart(2)]}
+          </ResizablePane>
         );
 
       case "3L-R2":
         return (
-          <div className="flex w-full h-full gap-1">
-            <div className="w-1/2 h-full">{getChart(0)}</div>
-            <div className="w-1/2 h-full flex flex-col gap-1">
-              <div className="h-1/2">{getChart(1)}</div>
-              <div className="h-1/2">{getChart(2)}</div>
-            </div>
-          </div>
+          <ResizablePane direction="horizontal">
+            {[
+              getChart(0),
+              <ResizablePane direction="vertical" key="right">
+                {[getChart(1), getChart(2)]}
+              </ResizablePane>,
+            ]}
+          </ResizablePane>
         );
 
       case "3R-L2":
         return (
-          <div className="flex w-full h-full gap-1">
-            <div className="w-1/2 h-full flex flex-col gap-1">
-              <div className="h-1/2">{getChart(0)}</div>
-              <div className="h-1/2">{getChart(1)}</div>
-            </div>
-            <div className="w-1/2 h-full">{getChart(2)}</div>
-          </div>
+          <ResizablePane direction="horizontal">
+            {[
+              <ResizablePane direction="vertical" key="left">
+                {[getChart(0), getChart(1)]}
+              </ResizablePane>,
+              getChart(2),
+            ]}
+          </ResizablePane>
         );
 
       case "3T-B2":
         return (
-          <div className="flex flex-col w-full h-full gap-1">
-            <div className="h-1/2 w-full">{getChart(0)}</div>
-            <div className="h-1/2 flex gap-1">
-              <div className="w-1/2">{getChart(1)}</div>
-              <div className="w-1/2">{getChart(2)}</div>
-            </div>
-          </div>
+          <ResizablePane direction="vertical">
+            {[
+              getChart(0),
+              <ResizablePane direction="horizontal" key="bottom">
+                {[getChart(1), getChart(2)]}
+              </ResizablePane>,
+            ]}
+          </ResizablePane>
         );
 
       case "3B-T2":
         return (
-          <div className="flex flex-col w-full h-full gap-1">
-            <div className="h-1/2 flex gap-1">
-              <div className="w-1/2">{getChart(0)}</div>
-              <div className="w-1/2">{getChart(1)}</div>
-            </div>
-            <div className="h-1/2 w-full">{getChart(2)}</div>
-          </div>
+          <ResizablePane direction="vertical">
+            {[
+              <ResizablePane direction="horizontal" key="top">
+                {[getChart(0), getChart(1)]}
+              </ResizablePane>,
+              getChart(2),
+            ]}
+          </ResizablePane>
         );
 
       case "4":
         return (
-          <div className="grid grid-cols-2 grid-rows-2 w-full h-full gap-1">
-            {[0, 1, 2, 3].map(getChart)}
-          </div>
+          <ResizablePane direction="vertical">
+            {[
+              <ResizablePane direction="horizontal" key="top">
+                {[getChart(0), getChart(1)]}
+              </ResizablePane>,
+              <ResizablePane direction="horizontal" key="bottom">
+                {[getChart(2), getChart(3)]}
+              </ResizablePane>,
+            ]}
+          </ResizablePane>
         );
 
       case "4L":
         return (
-          <div className="grid grid-cols-4 w-full h-full gap-1">
-            {[0, 1, 2, 3].map(getChart)}
-          </div>
+          <ResizablePane direction="horizontal">
+            {[getChart(0), getChart(1), getChart(2), getChart(3)]}
+          </ResizablePane>
         );
 
       case "4V":
         return (
-          <div className="grid grid-rows-4 w-full h-full gap-1">
-            {[0, 1, 2, 3].map(getChart)}
-          </div>
+          <ResizablePane direction="vertical">
+            {[getChart(0), getChart(1), getChart(2), getChart(3)]}
+          </ResizablePane>
         );
 
       case "4L-R3":
         return (
-          <div className="flex w-full h-full gap-1">
-            <div className="w-1/2 h-full">{getChart(0)}</div>
-            <div className="w-1/2 h-full flex flex-col gap-1">
-              <div className="h-1/3">{getChart(1)}</div>
-              <div className="h-1/3">{getChart(2)}</div>
-              <div className="h-1/3">{getChart(3)}</div>
-            </div>
-          </div>
+          <ResizablePane direction="horizontal">
+            {[
+              getChart(0),
+              <ResizablePane direction="vertical" key="right">
+                {[getChart(1), getChart(2), getChart(3)]}
+              </ResizablePane>,
+            ]}
+          </ResizablePane>
         );
 
       case "4R-L3":
         return (
-          <div className="flex w-full h-full gap-1">
-            <div className="w-1/2 h-full flex flex-col gap-1">
-              <div className="h-1/3">{getChart(0)}</div>
-              <div className="h-1/3">{getChart(1)}</div>
-              <div className="h-1/3">{getChart(2)}</div>
-            </div>
-            <div className="w-1/2 h-full">{getChart(3)}</div>
-          </div>
+          <ResizablePane direction="horizontal">
+            {[
+              <ResizablePane direction="vertical" key="left">
+                {[getChart(0), getChart(1), getChart(2)]}
+              </ResizablePane>,
+              getChart(3),
+            ]}
+          </ResizablePane>
         );
 
       case "4T-B3":
         return (
-          <div className="flex flex-col w-full h-full gap-1">
-            <div className="h-1/2 w-full">{getChart(0)}</div>
-            <div className="h-1/2 flex gap-1">
-              <div className="w-1/3">{getChart(1)}</div>
-              <div className="w-1/3">{getChart(2)}</div>
-              <div className="w-1/3">{getChart(3)}</div>
-            </div>
-          </div>
+          <ResizablePane direction="vertical">
+            {[
+              getChart(0),
+              <ResizablePane direction="horizontal" key="bottom">
+                {[getChart(1), getChart(2), getChart(3)]}
+              </ResizablePane>,
+            ]}
+          </ResizablePane>
         );
 
       case "4B-T3":
         return (
-          <div className="flex flex-col w-full h-full gap-1">
-            <div className="h-1/2 flex gap-1">
-              <div className="w-1/3">{getChart(0)}</div>
-              <div className="w-1/3">{getChart(1)}</div>
-              <div className="w-1/3">{getChart(2)}</div>
-            </div>
-            <div className="h-1/2 w-full">{getChart(3)}</div>
-          </div>
+          <ResizablePane direction="vertical">
+            {[
+              <ResizablePane direction="horizontal" key="top">
+                {[getChart(0), getChart(1), getChart(2)]}
+              </ResizablePane>,
+              getChart(3),
+            ]}
+          </ResizablePane>
         );
 
       case "4L2-R2":
         return (
-          <div className="flex w-full h-full gap-1">
-            <div className="w-1/2 h-full flex gap-1">
-              <div className="w-1/2 h-full">{getChart(0)}</div>
-              <div className="w-1/2 h-full">{getChart(1)}</div>
-            </div>
-            <div className="w-1/2 h-full flex flex-col gap-1">
-              <div className="h-1/2">{getChart(2)}</div>
-              <div className="h-1/2">{getChart(3)}</div>
-            </div>
-          </div>
+          <ResizablePane direction="horizontal">
+            {[
+              <ResizablePane direction="horizontal" key="left">
+                {[getChart(0), getChart(1)]}
+              </ResizablePane>,
+              <ResizablePane direction="vertical" key="right">
+                {[getChart(2), getChart(3)]}
+              </ResizablePane>,
+            ]}
+          </ResizablePane>
         );
 
       case "4R2-L2":
         return (
-          <div className="flex w-full h-full gap-1">
-            <div className="w-1/2 h-full flex flex-col gap-1">
-              <div className="h-1/2">{getChart(0)}</div>
-              <div className="h-1/2">{getChart(1)}</div>
-            </div>
-
-            <div className="w-1/2 h-full flex gap-1">
-              <div className="w-1/2 h-full">{getChart(2)}</div>
-              <div className="w-1/2 h-full">{getChart(3)}</div>
-            </div>
-          </div>
+          <ResizablePane direction="horizontal">
+            {[
+              <ResizablePane direction="vertical" key="left">
+                {[getChart(0), getChart(1)]}
+              </ResizablePane>,
+              <ResizablePane direction="horizontal" key="right">
+                {[getChart(2), getChart(3)]}
+              </ResizablePane>,
+            ]}
+          </ResizablePane>
         );
 
       case "4T2-B2":
         return (
-          <div className="flex flex-col w-full h-full gap-1">
-            <div className="h-1/2 flex gap-1">
-              <div className="w-1/2">{getChart(0)}</div>
-              <div className="w-1/2">{getChart(1)}</div>
-            </div>
-
-            <div className="h-1/2 flex flex-col gap-1">
-              <div className="h-1/2">{getChart(2)}</div>
-              <div className="h-1/2">{getChart(3)}</div>
-            </div>
-          </div>
+          <ResizablePane direction="vertical">
+            {[
+              <ResizablePane direction="horizontal" key="top">
+                {[getChart(0), getChart(1)]}
+              </ResizablePane>,
+              <ResizablePane direction="vertical" key="bottom">
+                {[getChart(2), getChart(3)]}
+              </ResizablePane>,
+            ]}
+          </ResizablePane>
         );
 
       case "5":
         return (
-          <div className="grid grid-cols-3 grid-rows-2 w-full h-full gap-1">
-            {[0, 1, 2, 3, 4].map(getChart)}
-          </div>
+          <ResizablePane direction="vertical">
+            {[
+              <ResizablePane direction="horizontal" key="top">
+                {[getChart(0), getChart(1), getChart(2)]}
+              </ResizablePane>,
+              <ResizablePane direction="horizontal" key="bottom">
+                {[getChart(3), getChart(4)]}
+              </ResizablePane>,
+            ]}
+          </ResizablePane>
         );
 
       case "6":
         return (
-          <div className="grid grid-cols-3 grid-rows-2 w-full h-full gap-1">
-            {[0, 1, 2, 3, 4, 5].map(getChart)}
-          </div>
+          <ResizablePane direction="vertical">
+            {[
+              <ResizablePane direction="horizontal" key="top">
+                {[getChart(0), getChart(1), getChart(2)]}
+              </ResizablePane>,
+              <ResizablePane direction="horizontal" key="bottom">
+                {[getChart(3), getChart(4), getChart(5)]}
+              </ResizablePane>,
+            ]}
+          </ResizablePane>
         );
 
       case "6V":
         return (
-          <div className="grid grid-cols-2 grid-rows-3 w-full h-full gap-1">
-            {[0, 1, 2, 3, 4, 5].map(getChart)}
-          </div>
+          <ResizablePane direction="horizontal">
+            {[
+              <ResizablePane direction="vertical" key="left">
+                {[getChart(0), getChart(1), getChart(2)]}
+              </ResizablePane>,
+              <ResizablePane direction="vertical" key="right">
+                {[getChart(3), getChart(4), getChart(5)]}
+              </ResizablePane>,
+            ]}
+          </ResizablePane>
         );
 
       case "7":
         return (
-          <div className="grid grid-cols-4 grid-rows-2 w-full h-full gap-1">
-            {Array.from({ length: 7 }).map((_, i) => getChart(i))}
-          </div>
+          <ResizablePane direction="vertical">
+            {[
+              <ResizablePane direction="horizontal" key="top">
+                {[getChart(0), getChart(1), getChart(2), getChart(3)]}
+              </ResizablePane>,
+              <ResizablePane direction="horizontal" key="bottom">
+                {[getChart(4), getChart(5), getChart(6)]}
+              </ResizablePane>,
+            ]}
+          </ResizablePane>
         );
 
       case "8":
         return (
-          <div className="grid grid-cols-4 grid-rows-2 w-full h-full gap-1">
-            {Array.from({ length: 8 }).map((_, i) => getChart(i))}
-          </div>
+          <ResizablePane direction="vertical">
+            {[
+              <ResizablePane direction="horizontal" key="top">
+                {[getChart(0), getChart(1), getChart(2), getChart(3)]}
+              </ResizablePane>,
+              <ResizablePane direction="horizontal" key="bottom">
+                {[getChart(4), getChart(5), getChart(6), getChart(7)]}
+              </ResizablePane>,
+            ]}
+          </ResizablePane>
         );
 
       case "9":
         return (
-          <div className="grid grid-cols-3 grid-rows-3 w-full h-full gap-1">
-            {Array.from({ length: 9 }).map((_, i) => getChart(i))}
-          </div>
+          <ResizablePane direction="vertical">
+            {[
+              <ResizablePane direction="horizontal" key="row1">
+                {[getChart(0), getChart(1), getChart(2)]}
+              </ResizablePane>,
+              <ResizablePane direction="horizontal" key="row2">
+                {[getChart(3), getChart(4), getChart(5)]}
+              </ResizablePane>,
+              <ResizablePane direction="horizontal" key="row3">
+                {[getChart(6), getChart(7), getChart(8)]}
+              </ResizablePane>,
+            ]}
+          </ResizablePane>
         );
 
       case "10":
         return (
-          <div className="grid grid-cols-5 grid-rows-2 w-full h-full gap-1">
-            {Array.from({ length: 10 }).map((_, i) => getChart(i))}
-          </div>
+          <ResizablePane direction="vertical">
+            {[
+              <ResizablePane direction="horizontal" key="row1">
+                {[
+                  getChart(0),
+                  getChart(1),
+                  getChart(2),
+                  getChart(3),
+                  getChart(4),
+                ]}
+              </ResizablePane>,
+              <ResizablePane direction="horizontal" key="row2">
+                {[
+                  getChart(5),
+                  getChart(6),
+                  getChart(7),
+                  getChart(8),
+                  getChart(9),
+                ]}
+              </ResizablePane>,
+            ]}
+          </ResizablePane>
         );
 
       case "12":
         return (
-          <div className="grid grid-cols-4 grid-rows-3 w-full h-full gap-1">
-            {Array.from({ length: 12 }).map((_, i) => getChart(i))}
-          </div>
+          <ResizablePane direction="vertical">
+            {[
+              <ResizablePane direction="horizontal" key="row1">
+                {[getChart(0), getChart(1), getChart(2), getChart(3)]}
+              </ResizablePane>,
+              <ResizablePane direction="horizontal" key="row2">
+                {[getChart(4), getChart(5), getChart(6), getChart(7)]}
+              </ResizablePane>,
+              <ResizablePane direction="horizontal" key="row3">
+                {[getChart(8), getChart(9), getChart(10), getChart(11)]}
+              </ResizablePane>,
+            ]}
+          </ResizablePane>
         );
 
       case "14":
         return (
-          <div className="grid grid-cols-7 grid-rows-2 w-full h-full gap-1">
-            {Array.from({ length: 14 }).map((_, i) => getChart(i))}
-          </div>
+          <ResizablePane direction="vertical">
+            {[
+              <ResizablePane direction="horizontal" key="row1">
+                {Array.from({ length: 7 }, (_, i) => getChart(i))}
+              </ResizablePane>,
+              <ResizablePane direction="horizontal" key="row2">
+                {Array.from({ length: 7 }, (_, i) => getChart(i + 7))}
+              </ResizablePane>,
+            ]}
+          </ResizablePane>
         );
 
       case "16":
         return (
-          <div className="grid grid-cols-4 grid-rows-4 w-full h-full gap-1">
-            {Array.from({ length: 16 }).map((_, i) => getChart(i))}
-          </div>
+          <ResizablePane direction="vertical">
+            {[
+              <ResizablePane direction="horizontal" key="row1">
+                {[getChart(0), getChart(1), getChart(2), getChart(3)]}
+              </ResizablePane>,
+              <ResizablePane direction="horizontal" key="row2">
+                {[getChart(4), getChart(5), getChart(6), getChart(7)]}
+              </ResizablePane>,
+              <ResizablePane direction="horizontal" key="row3">
+                {[getChart(8), getChart(9), getChart(10), getChart(11)]}
+              </ResizablePane>,
+              <ResizablePane direction="horizontal" key="row4">
+                {[getChart(12), getChart(13), getChart(14), getChart(15)]}
+              </ResizablePane>,
+            ]}
+          </ResizablePane>
         );
 
       default:
