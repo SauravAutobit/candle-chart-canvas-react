@@ -45,7 +45,6 @@ export const setLayout = (layout: LayoutType) => {
 
 export const isLayoutHandlerReady = () => isRegistered;
 
-// ChartManager.ts
 let resizingAllowed = true;
 const initialPaneSizes: Record<string, number[]> = {};
 
@@ -113,3 +112,36 @@ export function parseNestedPaneSizes(
       return {};
   }
 }
+
+type CandleData = {
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  timestamp: number;
+};
+
+export const generateRandomCandlestickData = (count: number): CandleData[] => {
+  const data: CandleData[] = [];
+  let previousClose = 100;
+  const startTime = new Date("2024-01-01T09:00:00").getTime();
+
+  for (let i = 0; i < count; i++) {
+    const open = previousClose + (Math.random() - 0.5) * 5;
+    const high = open + Math.random() * 10;
+    const low = open - Math.random() * 10;
+    const close = low + Math.random() * (high - low);
+
+    data.push({
+      open: parseFloat(open.toFixed(2)),
+      high: parseFloat(high.toFixed(2)),
+      low: parseFloat(low.toFixed(2)),
+      close: parseFloat(close.toFixed(2)),
+      timestamp: startTime + i * 24 * 60 * 60 * 1000,
+    });
+
+    previousClose = close;
+  }
+
+  return data;
+};

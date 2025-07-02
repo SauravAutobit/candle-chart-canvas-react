@@ -6,7 +6,6 @@ import {
   getChartConfig,
   parseNestedPaneSizes,
 } from "./ChartManager";
-import ResizableChart from "./ResizableChart";
 import ResizablePane from "./ResizablePane";
 
 interface Props {
