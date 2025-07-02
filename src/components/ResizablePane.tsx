@@ -2,9 +2,9 @@ import React, { useRef, useState } from "react";
 
 interface ResizablePaneProps {
   direction: "horizontal" | "vertical";
-  children: React.ReactNode[]; // Support more than two children
+  children: React.ReactNode[];
   resizable?: boolean;
-  initialSizes?: number[]; // Optional default split, applies only if 2 children
+  initialSizes?: number[];
 }
 
 const ResizablePane: React.FC<ResizablePaneProps> = ({

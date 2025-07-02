@@ -23,6 +23,7 @@ const MultiChartLayout: React.FC<Props> = ({ data }) => {
   const { resizable, sizes } = getChartConfig(layout);
   console.log("check multichart");
 
+  // remove -> window manager
   const renderLayout = () => {
     const getChart = (i: number) => (
       <div key={i} className="bg-gray-800 rounded w-full h-full">

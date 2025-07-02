@@ -15,7 +15,7 @@ type CandleData = {
   close: number;
   timestamp: number;
 };
-
+// remove -> windowManager
 const generateRandomCandlestickData = (count: number): CandleData[] => {
   const data: CandleData[] = [];
   let previousClose = 100;
@@ -43,12 +43,13 @@ const generateRandomCandlestickData = (count: number): CandleData[] => {
 
 const Index = () => {
   const data = generateRandomCandlestickData(150);
+  console.log("data", data);
   useEffect(() => {
     const trySetLayout = () => {
       if (isLayoutHandlerReady()) {
         setResizableCharts(true);
         // setInitialPaneSizes("3R-L2", [20, 70, 30]);
-        setLayout("2H");
+        setLayout("3R-L2");
       } else {
         setTimeout(trySetLayout, 100); // Retry every 100ms
       }

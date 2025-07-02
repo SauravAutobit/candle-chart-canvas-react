@@ -497,6 +497,7 @@ if (!chartRef.current) return;
 }, [data, width, height, chartType]);
 
 return (
+
 <div>
 <select
 style={{ marginBottom: 10 }}
@@ -513,64 +514,64 @@ onChange={(e) => setChartType(e.target.value as ChartType)} >
 
 export default CandlestickCharts;
 
-
 <!-- --------------------------------------------------------------------------------------------- -->
 
-/**
- * ✅ Supports: Candlestick, Hollow Candles, Line, Area, Step Line, Line with Markers, Volume Bars, Bars, HLC, Baseline, Columns, High-Low
- * ⏳ Special Logic Required: Renko, Heikin Ashi, Line Break, Kagi, Point & Figure, Range
- */
+/\*\*
+
+- ✅ Supports: Candlestick, Hollow Candles, Line, Area, Step Line, Line with Markers, Volume Bars, Bars, HLC, Baseline, Columns, High-Low
+- ⏳ Special Logic Required: Renko, Heikin Ashi, Line Break, Kagi, Point & Figure, Range
+  \*/
 
 import React, { useEffect, useRef, useState } from "react";
-import * as PIXI from "pixi.js";
+import \* as PIXI from "pixi.js";
 
 interface CandleData {
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-  volume?: number;
-  timestamp: number;
+open: number;
+high: number;
+low: number;
+close: number;
+volume?: number;
+timestamp: number;
 }
 
 const chartTypes = [
-  "Candlestick",
-  "Hollow Candles",
-  "Line",
-  "Area",
-  "Volume Bars",
-  "Step Line",
-  "Line with Markers",
-  "Bars",
-  "HLC",
-  "Baseline",
-  "Columns",
-  "High-Low",
-  "Renko",
-  "Heikin Ashi",
-  "Line Break",
-  "Kagi",
-  "Point & Figure",
-  "Range"
+"Candlestick",
+"Hollow Candles",
+"Line",
+"Area",
+"Volume Bars",
+"Step Line",
+"Line with Markers",
+"Bars",
+"HLC",
+"Baseline",
+"Columns",
+"High-Low",
+"Renko",
+"Heikin Ashi",
+"Line Break",
+"Kagi",
+"Point & Figure",
+"Range"
 ] as const;
 type ChartType = typeof chartTypes[number];
 
 interface Props {
-  data: CandleData[];
-  width?: number;
-  height?: number;
+data: CandleData[];
+width?: number;
+height?: number;
 }
 
 const CandlestickCharts: React.FC<Props> = ({ data, width = 800, height = 500 }) => {
-  const [chartType, setChartType] = useState<ChartType>("Candlestick");
-  const chartRef = useRef<HTMLDivElement | null>(null);
-  const appRef = useRef<PIXI.Application | null>(null);
-  const scaleRef = useRef(1);
-  const offsetXRef = useRef(0);
+const [chartType, setChartType] = useState<ChartType>("Candlestick");
+const chartRef = useRef<HTMLDivElement | null>(null);
+const appRef = useRef<PIXI.Application | null>(null);
+const scaleRef = useRef(1);
+const offsetXRef = useRef(0);
 
-  useEffect(() => {
-    if (!chartRef.current) return;
-    chartRef.current.innerHTML = "";
+useEffect(() => {
+if (!chartRef.current) return;
+chartRef.current.innerHTML = "";
 
     const app = new PIXI.Application({
       width,
@@ -808,93 +809,92 @@ const CandlestickCharts: React.FC<Props> = ({ data, width = 800, height = 500 })
       app.destroy(true, true);
       if (chartRef.current) chartRef.current.innerHTML = "";
     };
-  }, [data, width, height, chartType]);
 
-  return (
-    <div>
-      <select
-        style={{ marginBottom: 10 }}
-        value={chartType}
-        onChange={(e) => setChartType(e.target.value as ChartType)}
-      >
-        {chartTypes.map((type) => (
-          <option key={type}>{type}</option>
-        ))}
-      </select>
-      <div ref={chartRef} style={{ width, height: height + 30 }} />
-    </div>
-  );
+}, [data, width, height, chartType]);
+
+return (
+
+<div>
+<select
+style={{ marginBottom: 10 }}
+value={chartType}
+onChange={(e) => setChartType(e.target.value as ChartType)} >
+{chartTypes.map((type) => (
+<option key={type}>{type}</option>
+))}
+</select>
+<div ref={chartRef} style={{ width, height: height + 30 }} />
+</div>
+);
 };
 
 export default CandlestickCharts;
 
-/**
- * ❓ Why Special Logic is Required for Remaining Chart Types:
- * - Renko, Heikin Ashi, Line Break, Kagi, Point & Figure, Range
- * - These types do not rely on a 1:1 mapping of raw OHLC data per timestamp.
- * - They require transformation, aggregation, or rule-based interpretation over time.
- * - You often compute blocks or steps based on price movement, not constant time intervals.
- */
+/\*\*
 
+- ❓ Why Special Logic is Required for Remaining Chart Types:
+- - Renko, Heikin Ashi, Line Break, Kagi, Point & Figure, Range
+- - These types do not rely on a 1:1 mapping of raw OHLC data per timestamp.
+- - They require transformation, aggregation, or rule-based interpretation over time.
+- - You often compute blocks or steps based on price movement, not constant time intervals.
+    \*/
 
 <!-- --------------------------------------------------------------------------------------------------------- -->
 
-
-
 import React, { useEffect, useRef, useState } from "react";
-import * as PIXI from "pixi.js";
+import \* as PIXI from "pixi.js";
 
 interface CandleData {
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-  volume?: number;
-  timestamp: number;
+open: number;
+high: number;
+low: number;
+close: number;
+volume?: number;
+timestamp: number;
 }
 
 const chartTypes = [
-  "Candlestick",
-  "Hollow Candles",
-  "Line",
-  "Area",
-  "Volume Bars",
-  "Step Line",
-  "Line with Markers",
-  "Bars",
-  "HLC",
-  "Baseline",
-  "Columns",
-  "High-Low",
-  "Renko",
-  "Heikin Ashi",
-  "Line Break",
-  "Kagi",
-  "Point & Figure",
-  "Range",
+"Candlestick",
+"Hollow Candles",
+"Line",
+"Area",
+"Volume Bars",
+"Step Line",
+"Line with Markers",
+"Bars",
+"HLC",
+"Baseline",
+"Columns",
+"High-Low",
+"Renko",
+"Heikin Ashi",
+"Line Break",
+"Kagi",
+"Point & Figure",
+"Range",
 ] as const;
 type ChartType = (typeof chartTypes)[number];
 
 interface Props {
-  data: CandleData[];
-  width?: number;
-  height?: number;
+data: CandleData[];
+width?: number;
+height?: number;
 }
 
 const CandlestickCharts: React.FC<Props> = ({
-  data,
-  width = 800,
-  height = 500,
+data,
+width = 800,
+height = 500,
 }) => {
-  const [chartType, setChartType] = useState<ChartType>("Candlestick");
-  const chartRef = useRef<HTMLDivElement | null>(null);
-  const appRef = useRef<PIXI.Application | null>(null);
-  const scaleRef = useRef(1);
-  const offsetXRef = useRef(0);
+const [chartType, setChartType] = useState<ChartType>("Candlestick");
+const chartRef = useRef<HTMLDivElement | null>(null);
+const appRef = useRef<PIXI.Application | null>(null);
+const scaleRef = useRef(1);
+const offsetXRef = useRef(0);
 
-  useEffect(() => {
-    if (!chartRef.current) return;
-    chartRef.current.innerHTML = "";
+useEffect(() => {
+if (!chartRef.current) return;
+chartRef.current.innerHTML = "";
 
     const app = new PIXI.Application({
       width,
@@ -1178,101 +1178,100 @@ const CandlestickCharts: React.FC<Props> = ({
       app.destroy(true, true);
       if (chartRef.current) chartRef.current.innerHTML = "";
     };
-  }, [data, width, height, chartType]);
 
-  return (
-    <div>
-      <select
-        style={{ marginBottom: 10 }}
-        value={chartType}
-        onChange={(e) => setChartType(e.target.value as ChartType)}
-      >
-        {chartTypes.map((type) => (
-          <option key={type}>{type}</option>
-        ))}
-      </select>
-      <div ref={chartRef} style={{ width, height: height + 30 }} />
-    </div>
-  );
+}, [data, width, height, chartType]);
+
+return (
+
+<div>
+<select
+style={{ marginBottom: 10 }}
+value={chartType}
+onChange={(e) => setChartType(e.target.value as ChartType)} >
+{chartTypes.map((type) => (
+<option key={type}>{type}</option>
+))}
+</select>
+<div ref={chartRef} style={{ width, height: height + 30 }} />
+</div>
+);
 };
 
 export default CandlestickCharts;
 
-
 <!-- ------------------------------------------------------------------------------------------------- -->
 
-
 import React, { useEffect, useRef, useState } from "react";
-import * as PIXI from "pixi.js";
+import \* as PIXI from "pixi.js";
 
 interface CandleData {
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-  volume?: number;
-  timestamp: number;
+open: number;
+high: number;
+low: number;
+close: number;
+volume?: number;
+timestamp: number;
 }
 
 const chartTypes = [
-  "Candlestick",
-  "Hollow Candles",
-  "Line",
-  "Area",
-  "Volume Bars",
-  "Step Line",
-  "Line with Markers",
-  "Bars",
-  "HLC",
-  "Baseline",
-  "Columns",
-  "High-Low",
-  "Renko",
-  "Heikin Ashi",
-  "Line Break",
-  "Kagi",
-  "Point & Figure",
-  "Range",
+"Candlestick",
+"Hollow Candles",
+"Line",
+"Area",
+"Volume Bars",
+"Step Line",
+"Line with Markers",
+"Bars",
+"HLC",
+"Baseline",
+"Columns",
+"High-Low",
+"Renko",
+"Heikin Ashi",
+"Line Break",
+"Kagi",
+"Point & Figure",
+"Range",
 ] as const;
 type ChartType = (typeof chartTypes)[number];
 
 interface Props {
-  data: CandleData[];
-  width?: number;
-  height?: number;
+data: CandleData[];
+width?: number;
+height?: number;
 }
 
 const CandlestickCharts: React.FC<Props> = ({
-  data,
-  width = 800,
-  height = 500,
+data,
+width = 800,
+height = 500,
 }) => {
-  const [chartType, setChartType] = useState<ChartType>("Candlestick");
-  const [indicator, setIndicator] = useState<string | null>(null);
+const [chartType, setChartType] = useState<ChartType>("Candlestick");
+const [indicator, setIndicator] = useState<string | null>(null);
 
-  const chartRef = useRef<HTMLDivElement | null>(null);
-  const appRef = useRef<PIXI.Application | null>(null);
-  const scaleRef = useRef(1);
-  const offsetXRef = useRef(0);
+const chartRef = useRef<HTMLDivElement | null>(null);
+const appRef = useRef<PIXI.Application | null>(null);
+const scaleRef = useRef(1);
+const offsetXRef = useRef(0);
 
-  function calculateSMA(data: CandleData[], period: number): (number | null)[] {
-    const sma: (number | null)[] = [];
-    for (let i = 0; i < data.length; i++) {
-      if (i < period - 1) {
-        sma.push(null); // not enough data
-      } else {
-        const sum = data
-          .slice(i - period + 1, i + 1)
-          .reduce((acc, d) => acc + d.close, 0);
-        sma.push(sum / period);
-      }
-    }
-    return sma;
-  }
+function calculateSMA(data: CandleData[], period: number): (number | null)[] {
+const sma: (number | null)[] = [];
+for (let i = 0; i < data.length; i++) {
+if (i < period - 1) {
+sma.push(null); // not enough data
+} else {
+const sum = data
+.slice(i - period + 1, i + 1)
+.reduce((acc, d) => acc + d.close, 0);
+sma.push(sum / period);
+}
+}
+return sma;
+}
 
-  useEffect(() => {
-    if (!chartRef.current) return;
-    chartRef.current.innerHTML = "";
+useEffect(() => {
+if (!chartRef.current) return;
+chartRef.current.innerHTML = "";
 
     const app = new PIXI.Application({
       width,
@@ -1578,37 +1577,422 @@ const CandlestickCharts: React.FC<Props> = ({
       app.destroy(true, true);
       if (chartRef.current) chartRef.current.innerHTML = "";
     };
-  }, [data, width, height, chartType, indicator]);
 
-  return (
-    <div>
-      <select
-        style={{ marginBottom: 10 }}
-        value={chartType}
-        onChange={(e) => setChartType(e.target.value as ChartType)}
-      >
-        {chartTypes.map((type) => (
-          <option key={type}>{type}</option>
-        ))}
-      </select>
-      <select
-        style={{ marginBottom: 10 }}
-        value={indicator || ""}
-        onChange={(e) => setIndicator(e.target.value || null)}
-      >
-        <option value="">None</option>
-        <option value="MA Cross">MA Cross</option>
-      </select>
+}, [data, width, height, chartType, indicator]);
+
+return (
+
+<div>
+<select
+style={{ marginBottom: 10 }}
+value={chartType}
+onChange={(e) => setChartType(e.target.value as ChartType)} >
+{chartTypes.map((type) => (
+<option key={type}>{type}</option>
+))}
+</select>
+<select
+style={{ marginBottom: 10 }}
+value={indicator || ""}
+onChange={(e) => setIndicator(e.target.value || null)} >
+<option value="">None</option>
+<option value="MA Cross">MA Cross</option>
+</select>
 
       <div ref={chartRef} style={{ width, height: height + 30 }} />
     </div>
-  );
+
+);
 };
 
 export default CandlestickCharts;
 
-
-
------------
+---
 
 i can make those functions dynamic for 100's of indicators and also instead of those functions i can use the package which provides inbuilt functions for indicators i.e technicalindicators.
+
+---
+
+WindowSlot //not needed can delete
+
+import { useRef, useEffect } from "react";
+import \* as PIXI from "pixi.js";
+import { sampleData } from "../utils/sampleTradingData";
+import { renderCandlestickChart } from "../utils/candlestickRenderer";
+
+interface Scale {
+scale: number;
+offset: number;
+}
+
+interface YScale {
+min: number;
+max: number;
+}
+
+interface WindowSlotProps {
+sharedXScale: Scale;
+yScale: YScale;
+className?: string;
+}
+
+function WindowSlot({ sharedXScale, yScale, className }: WindowSlotProps) {
+const containerRef = useRef<HTMLDivElement>(null);
+
+useEffect(() => {
+const app = new PIXI.Application({
+width: 300,
+height: 200,
+backgroundColor: 0x1e1e1e,
+});
+containerRef.current?.appendChild(app.view);
+
+    const graphics = new PIXI.Graphics();
+    app.stage.addChild(graphics);
+
+    renderCandlestickChart(graphics, sampleData, sharedXScale, yScale);
+
+    return () => app.destroy(true);
+
+}, []);
+
+return (
+
+<div ref={containerRef} className={`${className || ""} w-full h-full`} />
+);
+}
+
+export default WindowSlot;
+
+---
+
+WindowManager
+//not needed can delete
+
+// import { useRef } from 'react';
+// import WindowSlot from './WindowSlot';
+
+// interface WindowManagerProps {
+// rows: number;
+// columns: number;
+// syncX: boolean;
+// }
+
+// const createXScale = () => ({
+// scale: 1,
+// offset: 0
+// });
+
+// const createYScale = () => ({
+// min: 0,
+// max: 100
+// });
+
+// function WindowManager({ rows, columns, syncX }: WindowManagerProps) {
+// const totalSlots = rows \* columns;
+// const sharedXScale = useRef(createXScale());
+
+// return (
+// <div
+// style={{
+//         display: "grid",
+//         gridTemplateColumns: `repeat(${columns}, 1fr)`,
+//         gridTemplateRows: `repeat(${rows}, 1fr)`,
+//         gap: "5px",
+//         height: "100%",
+//       }}
+// >
+// {Array.from({ length: totalSlots }).map((\_, i) => (
+// <WindowSlot
+// key={i}
+// sharedXScale={syncX ? sharedXScale.current : createXScale()}
+// yScale={createYScale()}
+// className="bg-gray-900 rounded-lg overflow-hidden"
+// />
+// ))}
+// </div>
+// );
+// }
+
+// export default WindowManager;
+
+import React, { useState } from "react";
+import CandlestickCharts from "./CandlestickCharts";
+// import sampleData from "./sampleData.json"; // or use props
+
+const layouts = [
+{ label: "1x1", rows: 1, columns: 1 },
+{ label: "1x2", rows: 1, columns: 2 },
+{ label: "2x2", rows: 2, columns: 2 },
+];
+
+const WindowManager = ({ data }) => {
+const [layout, setLayout] = useState(layouts[0]); // default 1x1
+
+const totalWindows = layout.rows \* layout.columns;
+
+return (
+
+<div>
+{/_ Layout Selector _/}
+<div style={{ marginBottom: 10 }}>
+{layouts.map((l) => (
+<button
+key={l.label}
+onClick={() => setLayout(l)}
+style={{
+              marginRight: 5,
+              padding: "5px 10px",
+              background: layout.label === l.label ? "#444" : "#222",
+              color: "white",
+              border: "1px solid #666",
+              borderRadius: 4,
+            }} >
+{l.label}
+</button>
+))}
+</div>
+
+      {/* Grid Layout */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: `repeat(${layout.columns}, 1fr)`,
+          gridTemplateRows: `repeat(${layout.rows}, 1fr)`,
+          gap: "8px",
+          height: "calc(100vh - 100px)",
+        }}
+      >
+        {Array.from({ length: totalWindows }).map((_, index) => (
+          <div key={index} style={{ border: "1px solid #555" }}>
+            <CandlestickCharts data={data} width={1000} height={600} />
+          </div>
+        ))}
+      </div>
+    </div>
+
+);
+};
+
+export default WindowManager;
+
+---
+
+ResizableChart //not needed can delete
+
+// ResizableChart.tsx
+import React from "react";
+import { Rnd } from "react-rnd";
+import CandlestickCharts from "./CandlestickCharts";
+
+interface Props {
+index: number;
+data: any[];
+defaultWidth?: number | string;
+defaultHeight?: number | string;
+}
+
+const ResizableChart: React.FC<Props> = ({
+index,
+data,
+defaultWidth = "100%",
+defaultHeight = "100%",
+}) => {
+return (
+<Rnd
+default={{
+        width: defaultWidth,
+        height: defaultHeight,
+        x: 0,
+        y: 0,
+      }}
+minWidth={100}
+minHeight={100}
+bounds="parent"
+enableResizing={{
+        bottom: true,
+        right: true,
+        bottomRight: true,
+      }}
+style={{
+width:
+typeof defaultWidth === "string" ? defaultWidth : `${defaultWidth}px`,
+height:
+typeof defaultHeight === "string"
+? defaultHeight
+: `${defaultHeight}px`,
+
+        border: "1px solid #444",
+        backgroundColor: "#1e1e1e",
+        borderRadius: 8,
+      }}
+    >
+      <div className="w-full h-full rounded overflow-hidden">
+        <CandlestickCharts data={data[index % data.length]} />
+      </div>
+    </Rnd>
+
+);
+};
+
+export default ResizableChart;
+
+---
+
+LayoutSelector //not neeeded
+
+interface LayoutSelectorProps {
+onSelectLayout: (rows: number, columns: number) => void;
+}
+
+function LayoutSelector({ onSelectLayout }: LayoutSelectorProps) {
+const layouts = {
+"1x1": { rows: 1, columns: 1 },
+"1x2": { rows: 1, columns: 2 },
+"2x2": { rows: 2, columns: 2 },
+"1x3": { rows: 1, columns: 3 },
+// Add more as per TradingView UI
+};
+
+return (
+
+<div className="fixed top-4 right-4 flex gap-2 bg-gray-800 p-2 rounded-lg shadow-lg z-50">
+{Object.entries(layouts).map(([key, { rows, columns }]) => (
+<button
+key={key}
+onClick={() => onSelectLayout(rows, columns)}
+className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded transition-colors" >
+{key}
+</button>
+))}
+</div>
+);
+}
+
+export default LayoutSelector;
+
+---
+
+TradingChart // not needed
+
+import React, { useRef, useEffect } from 'react';
+import \* as PIXI from 'pixi.js';
+import { drawCandlesticks } from '../utils/candlestickRenderer';
+import { ChartInteractions } from '../utils/chartInteractions';
+
+// Define the structure of our candle data
+interface CandleData {
+open: number;
+high: number;
+low: number;
+close: number;
+timestamp?: string;
+}
+
+interface TradingChartProps {
+candleData: CandleData[];
+width?: number;
+height?: number;
+}
+
+const TradingChart: React.FC<TradingChartProps> = ({
+candleData,
+width = 800,
+height = 400
+}) => {
+// Create a ref to attach the PixiJS canvas to our React component
+const canvasRef = useRef<HTMLCanvasElement>(null);
+// Store the PixiJS application instance
+const appRef = useRef<PIXI.Application | null>(null);
+// Store the chart interactions instance
+const interactionsRef = useRef<ChartInteractions | null>(null);
+
+useEffect(() => {
+// This effect runs when the component mounts or when candleData changes
+console.log('Initializing PixiJS application...');
+
+    const initializePixiApp = async () => {
+      // Step 1: Create a new PixiJS application with await for proper initialization
+      const app = new PIXI.Application();
+
+      // Initialize the application
+      await app.init({
+        canvas: canvasRef.current!, // Attach to our canvas element
+        width: width,             // Set chart width
+        height: height,           // Set chart height
+        backgroundColor: 0x1a1a1a, // Dark background (hex color)
+        antialias: true,          // Enable smooth edges
+      });
+
+      // Store the app reference for cleanup later
+      appRef.current = app;
+      console.log('PixiJS application created successfully');
+
+      // Step 2: Draw the candlesticks using our utility function
+      if (candleData && candleData.length > 0) {
+        console.log(`Drawing ${candleData.length} candlesticks...`);
+        const container = drawCandlesticks(candleData, app);
+
+        // Step 3: Setup zoom and pan interactions
+        interactionsRef.current = new ChartInteractions(app, container, {
+          minZoom: 0.3,
+          maxZoom: 10,
+          zoomSpeed: 0.15
+        });
+
+        console.log('Chart interactions enabled');
+      }
+    };
+
+    initializePixiApp().catch((error) => {
+      console.error('Failed to initialize PixiJS application:', error);
+    });
+
+    // Step 4: Cleanup function - runs when component unmounts or dependencies change
+    return () => {
+      console.log('Cleaning up PixiJS application...');
+      if (interactionsRef.current) {
+        interactionsRef.current.destroy();
+        interactionsRef.current = null;
+      }
+      if (appRef.current) {
+        appRef.current.destroy(true); // Destroy app and remove from DOM
+        appRef.current = null;
+      }
+    };
+
+}, [candleData, width, height]); // Re-run when these values change
+
+const handleResetZoom = () => {
+if (interactionsRef.current) {
+interactionsRef.current.resetZoom();
+}
+};
+
+return (
+<div className="trading-chart-container">
+<div className="flex justify-between items-center mb-2">
+<h3 className="text-lg font-semibold text-white">Interactive Candlestick Chart</h3>
+<button
+          onClick={handleResetZoom}
+          className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition-colors"
+        >
+Reset Zoom
+</button>
+</div>
+
+      <div className="mb-2 text-sm text-gray-400">
+        Use mouse wheel to zoom, drag to pan
+      </div>
+
+      {/* This canvas element is where PixiJS will render our chart */}
+      <canvas
+        ref={canvasRef}
+        className="border border-gray-600 rounded cursor-grab"
+      />
+    </div>
+
+);
+};
+
+export default TradingChart;

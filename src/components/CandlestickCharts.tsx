@@ -517,7 +517,7 @@ const CandlestickCharts: React.FC<Props> = ({
       if (indicator === "MA Cross") {
         const maShort = calculateSMA(data, 5); // 5-period MA
         const maLong = calculateSMA(data, 10); // 10-period MA
-
+        console.log("maShort, maLong", maShort, maLong);
         graphics.lineStyle(1.5, 0xffff00); // Yellow for short MA
         maShort.slice(startIndex, endIndex).forEach((val, i) => {
           if (val === null) return;
