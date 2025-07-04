@@ -15,7 +15,7 @@ const Index = () => {
     const trySetLayout = () => {
       if (isLayoutHandlerReady()) {
         setResizableCharts(true);
-        // setInitialPaneSizes("3L-R2", [20, 70, 30]);
+        // setInitialPaneSizes("3L-R2", [30, 70, 30]);
         setLayout("3L-R2");
       } else {
         setTimeout(trySetLayout, 100); // Retry every 100ms

@@ -1996,3 +1996,202 @@ Reset Zoom
 };
 
 export default TradingChart;
+<!-- ---------- -->
+
+// Move all helper functions above the component so they are accessible in effects
+function calculateSMA(data: CandleData[], period: number): (number | null)[] {
+  const result: (number | null)[] = [];
+  for (let i = 0; i < data.length; i++) {
+    if (i < period - 1) {
+      result.push(null);
+    } else {
+      const slice = data.slice(i - period + 1, i + 1);
+      const sum = slice.reduce((acc, val) => acc + val.close, 0);
+      result.push(sum / period);
+    }
+  }
+  return result;
+}
+
+function calculateMcGinley(data: CandleData[], k = 0.6): (number | null)[] {
+  const result: (number | null)[] = [data[0]?.close || null];
+  for (let i = 1; i < data.length; i++) {
+    const prev = result[i - 1];
+    const alpha = k / (data[i]?.close ? data[i].close / prev! : 1);
+    result.push(prev! + alpha * (data[i].close - prev!));
+  }
+  return result;
+}
+
+function calculateMedianPrice(data: CandleData[]): number[] {
+  return data.map((d) => (d.high + d.low) / 2);
+}
+
+function calculateWMA(data: number[], period: number): number[] {
+  const result = [];
+  for (let i = 0; i < data.length; i++) {
+    if (i < period - 1) {
+      result.push(null);
+    } else {
+      const slice = data.slice(i - period + 1, i + 1);
+      const weightedSum = slice.reduce(
+        (acc, val, idx) => acc + val * (idx + 1),
+        0
+      );
+      const weight = (period * (period + 1)) / 2;
+      result.push(weightedSum / weight);
+    }
+  }
+  return result;
+}
+
+function calculateHMA(data: CandleData[], period = 9): number[] {
+  const wmaShort = calculateWMA(
+    data.map((d) => d.close),
+    Math.floor(period / 2)
+  );
+  const wmaLong = calculateWMA(
+    data.map((d) => d.close),
+    period
+  );
+  const hma = wmaShort.map((val, i) => {
+    if (val === null || wmaLong[i] === null) return null;
+    return 2 * val - wmaLong[i];
+  });
+  return hma;
+}
+
+function calculateParabolicSAR(
+  data: CandleData[],
+  step = 0.02,
+  max = 0.2
+): number[] {
+  const sar = [data[0].low];
+  let ep = data[0].high;
+  let af = step;
+  let long = true;
+
+  for (let i = 1; i < data.length; i++) {
+    const current = data[i];
+    const prior = data[i - 1];
+
+    sar.push(
+      long
+        ? Math.min(
+            sar[i - 1] + af * (ep - sar[i - 1]),
+            current.low,
+            data[i - 1].low
+          )
+        : Math.max(
+            sar[i - 1] + af * (ep - sar[i - 1]),
+            current.high,
+            data[i - 1].high
+          )
+    );
+
+    if (long) {
+      if (current.high > ep) {
+        ep = current.high;
+        af = Math.min(af + step, max);
+      }
+      if (sar[i] > current.low) {
+        long = false;
+        sar[i] = ep = current.low;
+        af = step;
+      }
+    } else {
+      if (current.low < ep) {
+        ep = current.low;
+        af = Math.min(af + step, max);
+      }
+      if (sar[i] < current.high) {
+        long = true;
+        sar[i] = ep = current.high;
+        af = step;
+      }
+    }
+  }
+
+  return sar;
+}
+
+function calculateATR(data: CandleData[], period = 10): number[] {
+  const atr = [];
+  for (let i = 0; i < data.length; i++) {
+    if (i < period) {
+      atr.push(null);
+    } else {
+      const slice = data.slice(i - period, i);
+      const tr = slice.map((d, idx) => {
+        if (idx === 0) return d.high - d.low;
+        const prev = slice[idx - 1];
+        return Math.max(
+          d.high - d.low,
+          Math.abs(d.high - prev.close),
+          Math.abs(d.low - prev.close)
+        );
+      });
+      const sum = tr.reduce((a, b) => a + b, 0);
+      atr.push(sum / period);
+    }
+  }
+  return atr;
+}
+
+function calculateSuperTrend(
+  data: CandleData[],
+  period = 10,
+  multiplier = 3
+): number[] {
+  const atr = calculateATR(data, period);
+  const upperBand = new Array(data.length).fill(null);
+  const lowerBand = new Array(data.length).fill(null);
+  const superTrend = new Array(data.length).fill(null);
+
+  for (let i = period; i < data.length; i++) {
+    if (i === period) {
+      const initialAtr = atr[i];
+      upperBand[i] = (data[i].high + data[i].low) / 2 + multiplier * initialAtr;
+      lowerBand[i] = (data[i].high + data[i].low) / 2 - multiplier * initialAtr;
+    } else {
+      upperBand[i] = Math.min(
+        upperBand[i - 1],
+        (data[i].high + data[i].low) / 2 + multiplier * atr[i]
+      );
+      lowerBand[i] = Math.max(
+        lowerBand[i - 1],
+        (data[i].high + data[i].low) / 2 - multiplier * atr[i]
+      );
+    }
+
+    if (data[i].close <= upperBand[i]) {
+      superTrend[i] = upperBand[i];
+    } else {
+      superTrend[i] = lowerBand[i];
+    }
+  }
+
+  return superTrend;
+}
+
+function calculateAroon(
+  data: CandleData[],
+  period = 14
+): { up: number[]; down: number[] } {
+  const aroonUp = new Array(data.length).fill(0);
+  const aroonDown = new Array(data.length).fill(0);
+
+  for (let i = period - 1; i < data.length; i++) {
+    const slice = data.slice(i - period + 1, i + 1);
+    const highest = Math.max(...slice.map((d) => d.high));
+    const lowest = Math.min(...slice.map((d) => d.low));
+    const highestIndex = slice.findIndex((d) => d.high === highest);
+    const lowestIndex = slice.findIndex((d) => d.low === lowest);
+
+    aroonUp[i] = ((period - highestIndex) / period) * 100;
+    aroonDown[i] = ((period - lowestIndex) / period) * 100;
+  }
+
+  return { up: aroonUp, down: aroonDown };
+}
+

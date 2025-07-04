@@ -25,7 +25,7 @@ const MultiChartLayout: React.FC<Props> = ({ data }) => {
   // remove -> window manager
   const renderLayout = () => {
     const getChart = (i: number) => (
-      <div key={i} className="bg-gray-800 rounded w-full h-full">
+      <div key={i} className="bg-gray-800 rounded w-full h-full border-red-200">
         <CandlestickCharts data={data[i % data.length]} />
       </div>
     );

@@ -1,6 +1,16 @@
+// no jump just zoom pann not wokring
+
 import React, { useEffect, useRef, useState } from "react";
 import * as PIXI from "pixi.js";
 import { before } from "node:test";
+import {
+  calculateHMA,
+  calculateMcGinley,
+  calculateMedianPrice,
+  calculateParabolicSAR,
+  calculateSMA,
+  calculateSuperTrend,
+} from "./ChartManager";
 
 interface CandleData {
   open: number;
@@ -43,248 +53,29 @@ const CandlestickCharts: React.FC<Props> = ({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 500 });
 
+  const [refresh, setRefresh] = useState(0);
+
   const chartRef = useRef<HTMLDivElement | null>(null);
   const appRef = useRef<PIXI.Application | null>(null);
   const scaleRef = useRef(1);
   const offsetXRef = useRef(0);
 
+  // Track containers and graphics for redraw
+  const chartContainerRef = useRef<PIXI.Container | null>(null);
+  const aroonContainerRef = useRef<PIXI.Container | null>(null);
+  const axisContainerRef = useRef<PIXI.Container | null>(null);
+  const graphicsRef = useRef<PIXI.Graphics | null>(null);
+  const tooltipRef = useRef<PIXI.Text | null>(null);
+  const crosshairRef = useRef<PIXI.Graphics | null>(null);
+
+  // Only create PIXI app once
   useEffect(() => {
-    const el = containerRef.current;
+    const el = chartRef.current;
     if (!el) return;
-
-    const observer = new ResizeObserver((entries) => {
-      for (let entry of entries) {
-        const { width, height } = entry.contentRect;
-        setDimensions({
-          width,
-          height: height - 30, // minus x-axis height
-        });
-      }
-    });
-
-    observer.observe(el);
-
-    return () => observer.disconnect();
-  }, []);
-  console.log("check candles");
-  function calculateSMA(data: CandleData[], period: number): (number | null)[] {
-    const sma: (number | null)[] = [];
-    for (let i = 0; i < data.length; i++) {
-      if (i < period - 1) {
-        sma.push(null); // not enough data
-      } else {
-        const sum = data
-          .slice(i - period + 1, i + 1)
-          .reduce((acc, d) => acc + d.close, 0);
-        sma.push(sum / period);
-      }
-    }
-    return sma;
-  }
-
-  function calculateMcGinley(data: CandleData[], k = 0.6): (number | null)[] {
-    const result: (number | null)[] = [];
-    let prev = data[0].close;
-    for (let i = 0; i < data.length; i++) {
-      const price = data[i].close;
-      const mcg = prev + (price - prev) / (k * Math.pow(price / prev, 4));
-      result.push(mcg);
-      prev = mcg;
-    }
-    return result;
-  }
-
-  function calculateMedianPrice(data: CandleData[]): number[] {
-    return data.map((d) => (d.high + d.low) / 2);
-  }
-
-  function calculateWMA(data: number[], period: number): number[] {
-    const wma: number[] = [];
-    const denom = (period * (period + 1)) / 2;
-    for (let i = 0; i < data.length; i++) {
-      if (i < period - 1) {
-        wma.push(NaN);
-        continue;
-      }
-      let sum = 0;
-      for (let j = 0; j < period; j++) {
-        sum += data[i - j] * (period - j);
-      }
-      wma.push(sum / denom);
-    }
-    return wma;
-  }
-
-  function calculateHMA(data: CandleData[], period = 9): number[] {
-    const prices = data.map((d) => d.close);
-    const wmaHalf = calculateWMA(prices, Math.floor(period / 2));
-    const wmaFull = calculateWMA(prices, period);
-    const diff = wmaHalf.map((v, i) =>
-      isNaN(v) || isNaN(wmaFull[i]) ? NaN : 2 * v - wmaFull[i]
-    );
-    return calculateWMA(diff, Math.floor(Math.sqrt(period)));
-  }
-
-  function calculateParabolicSAR(
-    data: CandleData[],
-    step = 0.02,
-    max = 0.2
-  ): number[] {
-    const sar: number[] = [];
-    let isUptrend = true;
-    let af = step;
-    let ep = data[0].low;
-    let psar = data[0].low;
-
-    for (let i = 1; i < data.length; i++) {
-      sar.push(psar);
-
-      if (isUptrend) {
-        psar = psar + af * (ep - psar);
-        if (data[i].low < psar) {
-          isUptrend = false;
-          psar = ep;
-          ep = data[i].low;
-          af = step;
-        } else {
-          if (data[i].high > ep) {
-            ep = data[i].high;
-            af = Math.min(af + step, max);
-          }
-        }
-      } else {
-        psar = psar + af * (ep - psar);
-        if (data[i].high > psar) {
-          isUptrend = true;
-          psar = ep;
-          ep = data[i].high;
-          af = step;
-        } else {
-          if (data[i].low < ep) {
-            ep = data[i].low;
-            af = Math.min(af + step, max);
-          }
-        }
-      }
-    }
-
-    sar.unshift(data[0].low); // push first value to align length
-    return sar;
-  }
-
-  function calculateATR(data: CandleData[], period = 10): number[] {
-    const trs = data.map((d, i) => {
-      if (i === 0) return d.high - d.low;
-      const prevClose = data[i - 1].close;
-      return Math.max(
-        d.high - d.low,
-        Math.abs(d.high - prevClose),
-        Math.abs(d.low - prevClose)
-      );
-    });
-
-    const atr: number[] = [];
-    for (let i = 0; i < trs.length; i++) {
-      if (i < period) {
-        atr.push(NaN);
-      } else {
-        const avg =
-          trs.slice(i - period + 1, i + 1).reduce((a, b) => a + b, 0) / period;
-        atr.push(avg);
-      }
-    }
-    return atr;
-  }
-
-  function calculateSuperTrend(
-    data: CandleData[],
-    period = 10,
-    multiplier = 3
-  ): number[] {
-    const atr = calculateATR(data, period);
-    const result: number[] = [];
-    let trendUp = true;
-    let prevSuperTrend = data[0].close;
-
-    for (let i = 0; i < data.length; i++) {
-      if (i < period) {
-        result.push(NaN);
-        continue;
-      }
-
-      const hl2 = (data[i].high + data[i].low) / 2;
-      const basicUpper = hl2 + multiplier * atr[i];
-      const basicLower = hl2 - multiplier * atr[i];
-
-      let superTrend = prevSuperTrend;
-      if (trendUp) {
-        if (data[i].close < basicLower) {
-          trendUp = false;
-          superTrend = basicUpper;
-        } else {
-          superTrend = Math.min(basicUpper, prevSuperTrend);
-        }
-      } else {
-        if (data[i].close > basicUpper) {
-          trendUp = true;
-          superTrend = basicLower;
-        } else {
-          superTrend = Math.max(basicLower, prevSuperTrend);
-        }
-      }
-
-      prevSuperTrend = superTrend;
-      result.push(superTrend);
-    }
-
-    return result;
-  }
-
-  function calculateAroon(
-    data: CandleData[],
-    period = 14
-  ): {
-    up: number[];
-    down: number[];
-  } {
-    const aroonUp: number[] = [];
-    const aroonDown: number[] = [];
-
-    for (let i = 0; i < data.length; i++) {
-      if (i < period - 1) {
-        aroonUp.push(NaN);
-        aroonDown.push(NaN);
-        continue;
-      }
-
-      const slice = data.slice(i - period + 1, i + 1);
-      const highs = slice.map((d) => d.high);
-      const lows = slice.map((d) => d.low);
-
-      const highestIndex = highs.lastIndexOf(Math.max(...highs));
-      const lowestIndex = lows.lastIndexOf(Math.min(...lows));
-
-      const up = ((period - highestIndex) / period) * 100;
-      const down = ((period - lowestIndex) / period) * 100;
-
-      aroonUp.push(up);
-      aroonDown.push(down);
-    }
-
-    return { up: aroonUp, down: aroonDown };
-  }
-
-  useEffect(() => {
     const width = dimensions.width;
     const height = dimensions.height;
-
-    if (!chartRef.current) return;
-    chartRef.current.innerHTML = "";
-
-    const hasAroon = indicator === "Aroon";
-    const aroonHeight = hasAroon ? 100 : 0;
     const xAxisHeight = 30;
-    const totalHeight = height + xAxisHeight + aroonHeight;
+    const totalHeight = height + xAxisHeight;
 
     const app = new PIXI.Application({
       width,
@@ -292,37 +83,82 @@ const CandlestickCharts: React.FC<Props> = ({
       backgroundColor: 0x000000,
       antialias: true,
     });
-
     appRef.current = app;
-    chartRef.current.appendChild(app.view);
+    el.appendChild(app.view as unknown as Node); // Fix type error
 
+    // Containers
     const chartContainer = new PIXI.Container();
     const aroonContainer = new PIXI.Container();
-
+    const axisContainer = new PIXI.Container();
     const graphics = new PIXI.Graphics();
     chartContainer.addChild(graphics);
     app.stage.addChild(chartContainer);
     app.stage.addChild(aroonContainer);
-
-    const axisContainer = new PIXI.Container();
     app.stage.addChild(axisContainer);
-
     const tooltip = new PIXI.Text("", { fontSize: 12, fill: 0xffffff });
     tooltip.visible = false;
     app.stage.addChild(tooltip);
-
     const crosshair = new PIXI.Graphics();
     app.stage.addChild(crosshair);
 
-    const spacing = 10;
-    let dragging = false;
-    let lastX = 0;
+    // Store refs
+    chartContainerRef.current = chartContainer;
+    aroonContainerRef.current = aroonContainer;
+    axisContainerRef.current = axisContainer;
+    graphicsRef.current = graphics;
+    tooltipRef.current = tooltip;
+    crosshairRef.current = crosshair;
 
-    const drawXAxisLabels = (
+    // Clean up on unmount
+    return () => {
+      app.destroy(true, true);
+      if (el) el.innerHTML = "";
+    };
+  }, []);
+
+  // Resize observer (same as before)
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        setDimensions({
+          width,
+          height: height - 30, // minus x-axis height
+        });
+      }
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []); // Empty dependency array
+
+  // Redraw chart on data, dimensions, chartType, indicator
+  useEffect(() => {
+    const app = appRef.current;
+    if (!app) return;
+    const width = dimensions.width;
+    const height = dimensions.height;
+    const xAxisHeight = 30;
+    let aroonHeight = 0;
+    if (indicator === "Aroon") aroonHeight = 100;
+    const totalHeight = height + xAxisHeight + aroonHeight;
+    if (app.view.width !== width || app.view.height !== totalHeight) {
+      app.renderer.resize(width, totalHeight);
+    }
+    // Clear containers
+    graphicsRef.current?.clear();
+    aroonContainerRef.current?.removeChildren();
+    axisContainerRef.current?.removeChildren();
+    crosshairRef.current?.clear();
+    if (tooltipRef.current) tooltipRef.current.visible = false;
+
+    // Helper for drawing X axis labels
+    function drawXAxisLabels(
       startIndex: number,
       visibleData: CandleData[],
       scaledSpacing: number
-    ) => {
+    ) {
       const skip = Math.ceil(80 / scaledSpacing);
       for (let i = 0; i < visibleData.length; i++) {
         const d = visibleData[i];
@@ -334,432 +170,409 @@ const CandlestickCharts: React.FC<Props> = ({
             { fontSize: 10, fill: 0xffffff }
           );
           label.position.set(x - 10, totalHeight - xAxisHeight + 5);
-          axisContainer.addChild(label);
+          axisContainerRef.current?.addChild(label);
         }
+      }
+    }
+
+    // All drawing logic from previous redraw() function goes here, using refs
+    const scaledSpacing = 10 * scaleRef.current;
+    const candleWidth = scaledSpacing * 0.6;
+
+    const visibleCount = Math.ceil(width / scaledSpacing);
+    const startIndex = Math.max(
+      0,
+      Math.floor(-offsetXRef.current / scaledSpacing)
+    );
+    const endIndex = Math.min(data.length, startIndex + visibleCount + 2);
+    const visibleData = data.slice(startIndex, endIndex);
+
+    const max = Math.max(...visibleData.map((d) => d.high));
+    const min = Math.min(...visibleData.map((d) => d.low));
+    const range = max - min || 1;
+    const scaleY = height / range;
+
+    const xFor = (idx: number) =>
+      idx * scaledSpacing + offsetXRef.current + candleWidth / 2;
+    const yFor = (price: number) => height - (price - min) * scaleY;
+
+    const drawCandle = (d: CandleData, x: number) => {
+      const openY = yFor(d.open);
+      const closeY = yFor(d.close);
+      const highY = yFor(d.high);
+      const lowY = yFor(d.low);
+      const isBull = d.close >= d.open;
+      const color = isBull ? 0x089981 : 0xf23645;
+
+      graphicsRef.current!.lineStyle(1, color);
+      graphicsRef.current!.moveTo(x, highY);
+      graphicsRef.current!.lineTo(x, lowY);
+
+      if (chartType === "Candlestick") {
+        graphicsRef.current!.beginFill(color);
+        graphicsRef.current!.drawRect(
+          x - candleWidth / 2,
+          Math.min(openY, closeY),
+          candleWidth,
+          Math.max(1, Math.abs(closeY - openY))
+        );
+        graphicsRef.current!.endFill();
+      } else if (chartType === "Hollow Candles") {
+        graphicsRef.current!.drawRect(
+          x - candleWidth / 2,
+          Math.min(openY, closeY),
+          candleWidth,
+          Math.max(1, Math.abs(closeY - openY))
+        );
       }
     };
 
-    const redraw = (mousePos?: { x: number; y: number }) => {
-      const scale = scaleRef.current;
-      const offsetX = offsetXRef.current;
+    visibleData.forEach((d, i) => {
+      const idx = startIndex + i;
+      const x = xFor(idx);
 
-      graphics.clear();
-      aroonContainer.removeChildren();
+      if (["Candlestick", "Hollow Candles"].includes(chartType))
+        drawCandle(d, x);
 
-      axisContainer.removeChildren();
-      crosshair.clear();
-      tooltip.visible = false;
-
-      const scaledSpacing = spacing * scale;
-      const candleWidth = scaledSpacing * 0.6;
-
-      const visibleCount = Math.ceil(width / scaledSpacing);
-      const startIndex = Math.max(0, Math.floor(-offsetX / scaledSpacing));
-      const endIndex = Math.min(data.length, startIndex + visibleCount + 2);
-      const visibleData = data.slice(startIndex, endIndex);
-
-      const max = Math.max(...visibleData.map((d) => d.high));
-      const min = Math.min(...visibleData.map((d) => d.low));
-      const range = max - min || 1;
-      const scaleY = height / range;
-
-      const xFor = (idx: number) =>
-        idx * scaledSpacing + offsetX + candleWidth / 2;
-      const yFor = (price: number) => height - (price - min) * scaleY;
-
-      const drawCandle = (d: CandleData, x: number) => {
+      if (chartType === "Bars" || chartType === "HLC") {
         const openY = yFor(d.open);
         const closeY = yFor(d.close);
         const highY = yFor(d.high);
         const lowY = yFor(d.low);
-        const isBull = d.close >= d.open;
-        const color = isBull ? 0x089981 : 0xf23645;
+        const color = d.close >= d.open ? 0x089981 : 0xf23645;
 
-        graphics.lineStyle(1, color);
-        graphics.moveTo(x, highY);
-        graphics.lineTo(x, lowY);
+        graphicsRef.current!.lineStyle(1, color);
+        graphicsRef.current!.moveTo(x, highY);
+        graphicsRef.current!.lineTo(x, lowY);
 
-        if (chartType === "Candlestick") {
-          graphics.beginFill(color);
-          graphics.drawRect(
-            x - candleWidth / 2,
-            Math.min(openY, closeY),
-            candleWidth,
-            Math.max(1, Math.abs(closeY - openY))
-          );
-          graphics.endFill();
-        } else if (chartType === "Hollow Candles") {
-          graphics.drawRect(
-            x - candleWidth / 2,
-            Math.min(openY, closeY),
-            candleWidth,
-            Math.max(1, Math.abs(closeY - openY))
-          );
+        if (chartType === "Bars") {
+          graphicsRef.current!.moveTo(x - 4, openY);
+          graphicsRef.current!.lineTo(x, openY);
         }
-      };
+        graphicsRef.current!.moveTo(x, closeY);
+        graphicsRef.current!.lineTo(x + 4, closeY);
+      }
 
+      if (chartType === "Volume Bars" || chartType === "Columns") {
+        const color = d.close >= d.open ? 0x089981 : 0xf23645;
+        const y = yFor(d.close);
+        graphicsRef.current!.beginFill(color);
+        graphicsRef.current!.drawRect(
+          x - candleWidth / 2,
+          y,
+          candleWidth,
+          height - y
+        );
+        graphicsRef.current!.endFill();
+      }
+
+      if (chartType === "Line with Markers") {
+        const y = yFor(d.close);
+        graphicsRef.current!.beginFill(0x00ccff);
+        graphicsRef.current!.drawCircle(x, y, 2);
+        graphicsRef.current!.endFill();
+      }
+    });
+
+    if (
+      ["Line", "Area", "Step Line", "Line with Markers", "Baseline"].includes(
+        chartType
+      )
+    ) {
+      graphicsRef.current!.lineStyle(1, 0x00ccff);
+      graphicsRef.current!.beginFill(
+        chartType === "Area" || chartType === "Baseline" ? 0x00ccff : undefined,
+        0.2
+      );
       visibleData.forEach((d, i) => {
-        const idx = startIndex + i;
-        const x = xFor(idx);
+        const x = xFor(startIndex + i);
+        const y = yFor(d.close);
 
-        if (["Candlestick", "Hollow Candles"].includes(chartType))
-          drawCandle(d, x);
-
-        if (chartType === "Bars" || chartType === "HLC") {
-          const openY = yFor(d.open);
-          const closeY = yFor(d.close);
-          const highY = yFor(d.high);
-          const lowY = yFor(d.low);
-          const color = d.close >= d.open ? 0x089981 : 0xf23645;
-
-          graphics.lineStyle(1, color);
-          graphics.moveTo(x, highY);
-          graphics.lineTo(x, lowY);
-
-          if (chartType === "Bars") {
-            graphics.moveTo(x - 4, openY);
-            graphics.lineTo(x, openY);
-          }
-          graphics.moveTo(x, closeY);
-          graphics.lineTo(x + 4, closeY);
+        if (i === 0) {
+          graphicsRef.current!.moveTo(
+            x,
+            chartType === "Area" || chartType === "Baseline" ? height : y
+          );
+          graphicsRef.current!.lineTo(x, y);
+        } else if (chartType === "Step Line") {
+          const prev = yFor(visibleData[i - 1].close);
+          graphicsRef.current!.lineTo(x, prev);
+          graphicsRef.current!.lineTo(x, y);
+        } else {
+          graphicsRef.current!.lineTo(x, y);
         }
+      });
+      if (chartType === "Area" || chartType === "Baseline") {
+        const lastX = xFor(startIndex + visibleData.length - 1);
+        graphicsRef.current!.lineTo(lastX, height);
+        graphicsRef.current!.lineTo(xFor(startIndex), height);
+        graphicsRef.current!.closePath();
+      }
 
-        if (chartType === "Volume Bars" || chartType === "Columns") {
-          const color = d.close >= d.open ? 0x089981 : 0xf23645;
-          const y = yFor(d.close);
-          graphics.beginFill(color);
-          graphics.drawRect(x - candleWidth / 2, y, candleWidth, height - y);
-          graphics.endFill();
-        }
+      graphicsRef.current!.endFill();
+    }
 
-        if (chartType === "Line with Markers") {
-          const y = yFor(d.close);
-          graphics.beginFill(0x00ccff);
-          graphics.drawCircle(x, y, 2);
-          graphics.endFill();
-        }
+    drawXAxisLabels(startIndex, visibleData, scaledSpacing);
 
-        if (
-          mousePos &&
-          mousePos.x >= x - candleWidth / 2 &&
-          mousePos.x <= x + candleWidth / 2
-        ) {
-          tooltip.text = `O: ${d.open}\nH: ${d.high}\nL: ${d.low}\nC: ${d.close}`;
-          tooltip.position.set(mousePos.x + 10, mousePos.y - 40);
-          tooltip.visible = true;
+    const steps = 10;
+    const priceStep = range / steps;
+    for (let i = 0; i <= steps; i++) {
+      const price = min + i * priceStep;
+      const y = yFor(price);
+      const label = new PIXI.Text(price.toFixed(2), {
+        fontSize: 10,
+        fill: 0xffffff,
+      });
+      label.position.set(5, y - 6);
+      axisContainerRef.current!.addChild(label);
 
-          crosshair.lineStyle(1, 0xffffff, 0.3);
-          crosshair.moveTo(x, 0);
-          crosshair.lineTo(x, height);
-          crosshair.moveTo(0, mousePos.y);
-          crosshair.lineTo(width, mousePos.y);
+      graphicsRef.current!.lineStyle(0.5, 0x888888, 0.3);
+      graphicsRef.current!.moveTo(0, y);
+      graphicsRef.current!.lineTo(width, y);
+    }
+    if (indicator === "MA Cross") {
+      const maShort = calculateSMA(data, 5); // 5-period MA
+      const maLong = calculateSMA(data, 10); // 10-period MA
+      console.log("maShort, maLong", maShort, maLong);
+      graphicsRef.current!.lineStyle(1.5, 0xffff00); // Yellow for short MA
+      maShort.slice(startIndex, endIndex).forEach((val, i) => {
+        if (val === null) return;
+        const x = xFor(startIndex + i);
+        const y = yFor(val);
+        if (i === 0 || maShort[startIndex + i - 1] === null) {
+          graphicsRef.current!.moveTo(x, y);
+        } else {
+          graphicsRef.current!.lineTo(x, y);
         }
       });
 
-      if (
-        ["Line", "Area", "Step Line", "Line with Markers", "Baseline"].includes(
-          chartType
-        )
-      ) {
-        graphics.lineStyle(1, 0x00ccff);
-        graphics.beginFill(
-          chartType === "Area" || chartType === "Baseline"
-            ? 0x00ccff
-            : undefined,
-          0.2
-        );
-        visibleData.forEach((d, i) => {
-          const x = xFor(startIndex + i);
-          const y = yFor(d.close);
-
-          if (i === 0) {
-            graphics.moveTo(
-              x,
-              chartType === "Area" || chartType === "Baseline" ? height : y
-            );
-            graphics.lineTo(x, y);
-          } else if (chartType === "Step Line") {
-            const prev = yFor(visibleData[i - 1].close);
-            graphics.lineTo(x, prev);
-            graphics.lineTo(x, y);
-          } else {
-            graphics.lineTo(x, y);
-          }
-        });
-        if (chartType === "Area" || chartType === "Baseline") {
-          const lastX = xFor(startIndex + visibleData.length - 1);
-          graphics.lineTo(lastX, height);
-          graphics.lineTo(xFor(startIndex), height);
-          graphics.closePath();
+      graphicsRef.current!.lineStyle(1.5, 0x00ffff); // Cyan for long MA
+      maLong.slice(startIndex, endIndex).forEach((val, i) => {
+        if (val === null) return;
+        const x = xFor(startIndex + i);
+        const y = yFor(val);
+        if (i === 0 || maLong[startIndex + i - 1] === null) {
+          graphicsRef.current!.moveTo(x, y);
+        } else {
+          graphicsRef.current!.lineTo(x, y);
         }
+      });
+    }
 
-        graphics.endFill();
-      }
-
-      drawXAxisLabels(startIndex, visibleData, scaledSpacing);
-
-      const steps = 10;
-      const priceStep = range / steps;
-      for (let i = 0; i <= steps; i++) {
-        const price = min + i * priceStep;
-        const y = yFor(price);
-        const label = new PIXI.Text(price.toFixed(2), {
-          fontSize: 10,
-          fill: 0xffffff,
-        });
-        label.position.set(5, y - 6);
-        axisContainer.addChild(label);
-
-        graphics.lineStyle(0.5, 0x888888, 0.3);
-        graphics.moveTo(0, y);
-        graphics.lineTo(width, y);
-      }
-      if (indicator === "MA Cross") {
-        const maShort = calculateSMA(data, 5); // 5-period MA
-        const maLong = calculateSMA(data, 10); // 10-period MA
-        console.log("maShort, maLong", maShort, maLong);
-        graphics.lineStyle(1.5, 0xffff00); // Yellow for short MA
-        maShort.slice(startIndex, endIndex).forEach((val, i) => {
-          if (val === null) return;
-          const x = xFor(startIndex + i);
-          const y = yFor(val);
-          if (i === 0 || maShort[startIndex + i - 1] === null) {
-            graphics.moveTo(x, y);
-          } else {
-            graphics.lineTo(x, y);
-          }
-        });
-
-        graphics.lineStyle(1.5, 0x00ffff); // Cyan for long MA
-        maLong.slice(startIndex, endIndex).forEach((val, i) => {
-          if (val === null) return;
-          const x = xFor(startIndex + i);
-          const y = yFor(val);
-          if (i === 0 || maLong[startIndex + i - 1] === null) {
-            graphics.moveTo(x, y);
-          } else {
-            graphics.lineTo(x, y);
-          }
-        });
-      }
-
-      if (indicator === "McGinley Dynamic") {
-        const mcg = calculateMcGinley(data);
-        graphics.lineStyle(1.5, 0xffaa00); // Orange
-        mcg.slice(startIndex, endIndex).forEach((val, i) => {
-          if (val === null) return;
-          const x = xFor(startIndex + i);
-          const y = yFor(val);
-          if (i === 0 || mcg[startIndex + i - 1] === null) {
-            graphics.moveTo(x, y);
-          } else {
-            graphics.lineTo(x, y);
-          }
-        });
-      }
-
-      if (indicator === "Median Price") {
-        const median = calculateMedianPrice(data);
-        graphics.lineStyle(1.5, 0xff00ff); // Pink
-        median.slice(startIndex, endIndex).forEach((val, i) => {
-          const x = xFor(startIndex + i);
-          const y = yFor(val);
-          if (i === 0) {
-            graphics.moveTo(x, y);
-          } else {
-            graphics.lineTo(x, y);
-          }
-        });
-      }
-
-      if (indicator === "Hull MA") {
-        const hma = calculateHMA(data);
-        graphics.lineStyle(1.5, 0x00ff99); // Green
-        hma.slice(startIndex, endIndex).forEach((val, i) => {
-          if (isNaN(val)) return;
-          const x = xFor(startIndex + i);
-          const y = yFor(val);
-          if (i === 0 || isNaN(hma[startIndex + i - 1])) {
-            graphics.moveTo(x, y);
-          } else {
-            graphics.lineTo(x, y);
-          }
-        });
-      }
-
-      if (indicator === "Parabolic SAR") {
-        const psar = calculateParabolicSAR(data);
-        graphics.lineStyle(0);
-        psar.slice(startIndex, endIndex).forEach((val, i) => {
-          const x = xFor(startIndex + i);
-          const y = yFor(val);
-          graphics.beginFill(0xff00ff);
-          graphics.drawCircle(x, y, 2);
-          graphics.endFill();
-        });
-      }
-
-      if (indicator === "SuperTrend") {
-        const supertrend = calculateSuperTrend(data);
-        graphics.lineStyle(2, 0x00ffcc);
-        supertrend.slice(startIndex, endIndex).forEach((val, i) => {
-          if (isNaN(val)) return;
-          const x = xFor(startIndex + i);
-          const y = yFor(val);
-          if (i === 0 || isNaN(supertrend[startIndex + i - 1])) {
-            graphics.moveTo(x, y);
-          } else {
-            graphics.lineTo(x, y);
-          }
-        });
-      }
-
-      // If Aroon is selected, draw it in a separate pane below the main chart
-      if (indicator === "Aroon") {
-        const paneHeight = 100; // height for Aroon pane
-        const aroon = calculateAroon(data);
-        const up = aroon.up.slice(startIndex, endIndex);
-        const down = aroon.down.slice(startIndex, endIndex);
-
-        const yForAroon = (val: number) =>
-          height + aroonHeight - (val / 100) * aroonHeight;
-
-        // Adjust app height only if not already increased
-        if (app.view.height !== height + 30 + paneHeight) {
-          app.renderer.resize(width, height + 30 + paneHeight);
+    if (indicator === "McGinley Dynamic") {
+      const mcg = calculateMcGinley(data);
+      graphicsRef.current!.lineStyle(1.5, 0xffaa00); // Orange
+      mcg.slice(startIndex, endIndex).forEach((val, i) => {
+        if (val === null) return;
+        const x = xFor(startIndex + i);
+        const y = yFor(val);
+        if (i === 0 || mcg[startIndex + i - 1] === null) {
+          graphicsRef.current!.moveTo(x, y);
+        } else {
+          graphicsRef.current!.lineTo(x, y);
         }
+      });
+    }
 
-        // Aroon Up line (Orange)
-        graphics.lineStyle(1.5, 0xffa500);
-        up.forEach((val, i) => {
-          if (isNaN(val)) return;
-          const x = xFor(startIndex + i);
-          const y = yForAroon(val);
-          if (i === 0 || isNaN(up[i - 1])) {
-            graphics.moveTo(x, y);
-          } else {
-            graphics.lineTo(x, y);
-          }
-        });
-
-        // Aroon Down line (Blue)
-        graphics.lineStyle(1.5, 0x007aff);
-        down.forEach((val, i) => {
-          if (isNaN(val)) return;
-          const x = xFor(startIndex + i);
-          const y = yForAroon(val);
-          if (i === 0 || isNaN(down[i - 1])) {
-            graphics.moveTo(x, y);
-          } else {
-            graphics.lineTo(x, y);
-          }
-        });
-
-        // Aroon Y-axis (right side, percentage)
-        const step = 20;
-        for (let v = 0; v <= 100; v += step) {
-          const y = yForAroon(v);
-          const label = new PIXI.Text(`${v.toFixed(0)}%`, {
-            fontSize: 10,
-            fill: 0xffffff,
-          });
-          label.anchor.set(1, 0.5);
-          label.position.set(width - 4, y);
-          axisContainer.addChild(label);
-
-          graphics.lineStyle(0.5, 0x666666, 0.3);
-          graphics.moveTo(0, y);
-          graphics.lineTo(width, y);
+    if (indicator === "Median Price") {
+      const median = calculateMedianPrice(data);
+      graphicsRef.current!.lineStyle(1.5, 0xff00ff); // Pink
+      median.slice(startIndex, endIndex).forEach((val, i) => {
+        const x = xFor(startIndex + i);
+        const y = yFor(val);
+        if (i === 0) {
+          graphicsRef.current!.moveTo(x, y);
+        } else {
+          graphicsRef.current!.lineTo(x, y);
         }
+      });
+    }
+
+    if (indicator === "Hull MA") {
+      const hma = calculateHMA(data);
+      graphicsRef.current!.lineStyle(1.5, 0x00ff99); // Green
+      hma.slice(startIndex, endIndex).forEach((val, i) => {
+        if (isNaN(val)) return;
+        const x = xFor(startIndex + i);
+        const y = yFor(val);
+        if (i === 0) {
+          graphicsRef.current!.moveTo(x, y);
+        } else {
+          graphicsRef.current!.lineTo(x, y);
+        }
+      });
+    }
+
+    if (indicator === "Parabolic SAR") {
+      const psar = calculateParabolicSAR(data);
+      graphicsRef.current!.lineStyle(0);
+      psar.slice(startIndex, endIndex).forEach((val, i) => {
+        const x = xFor(startIndex + i);
+        const y = yFor(val);
+        graphicsRef.current!.beginFill(0xff00ff);
+        graphicsRef.current!.drawCircle(x, y, 2);
+        graphicsRef.current!.endFill();
+      });
+    }
+
+    if (indicator === "SuperTrend") {
+      const supertrend = calculateSuperTrend(data);
+      graphicsRef.current!.lineStyle(2, 0x00ffcc);
+      supertrend.slice(startIndex, endIndex).forEach((val, i) => {
+        if (isNaN(val)) return;
+        const x = xFor(startIndex + i);
+        const y = yFor(val);
+        if (i === 0 || isNaN(supertrend[startIndex + i - 1])) {
+          graphicsRef.current!.moveTo(x, y);
+        } else {
+          graphicsRef.current!.lineTo(x, y);
+        }
+      });
+    }
+  }, [data, dimensions, chartType, indicator, refresh]);
+
+  // Handle zoom
+  useEffect(() => {
+    const app = appRef.current;
+    if (!app) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const scaleFactor = 1.1;
+      const prevScale = scaleRef.current;
+
+      if (e.deltaY < 0) {
+        scaleRef.current *= scaleFactor;
+      } else {
+        scaleRef.current /= scaleFactor;
       }
 
-      if (indicator !== "Aroon" && app.view.height !== height + 30) {
-        app.renderer.resize(width, height + 30);
-      }
+      // Clamp
+      scaleRef.current = Math.max(0.1, Math.min(10, scaleRef.current));
+
+      // Optional: center zoom around mouse
+      // const mouseX = e.clientX - canvas.getBoundingClientRect().left;
+      // const prevOffset = offsetXRef.current;
+      // const scaleChange = scaleRef.current / prevScale;
+      // offsetXRef.current = mouseX - (mouseX - prevOffset) * scaleChange;
+
+      setRefresh((r) => r + 1); // trigger redraw
     };
 
-    redraw();
+    const canvas = app.view;
+    canvas.addEventListener("wheel", handleWheel);
 
-    app.view.addEventListener("wheel", (e: WheelEvent) => {
-      e.preventDefault();
-      const bounds = app.view.getBoundingClientRect();
-      const mouseX = e.clientX - bounds.left;
+    return () => {
+      canvas.removeEventListener("wheel", handleWheel);
+    };
+  }, []);
 
-      if (e.shiftKey) {
-        // Horizontal panning when shift is pressed
-        const panAmount = e.deltaY > 0 ? -30 : 30;
-        offsetXRef.current += panAmount;
-        redraw();
-        return;
-      }
+  // Handle panning
+  useEffect(() => {
+    const app = appRef.current;
+    if (!app) return;
 
-      const worldX = (mouseX - offsetXRef.current) / scaleRef.current;
-      const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
-      const newScale = Math.max(
-        0.2,
-        Math.min(5, scaleRef.current * zoomFactor)
+    let isDragging = false;
+    let startX = 0;
+    const canvas = app.view;
+
+    const onMouseDown = (e: MouseEvent) => {
+      isDragging = true;
+      startX = e.clientX;
+    };
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      const dx = e.clientX - startX;
+      startX = e.clientX;
+      offsetXRef.current += dx;
+
+      // Clamp offset to prevent empty space
+      const maxOffset = 0;
+      const minOffset = -data.length * 10 * scaleRef.current + dimensions.width;
+      offsetXRef.current = Math.min(
+        maxOffset,
+        Math.max(minOffset, offsetXRef.current)
       );
-      offsetXRef.current = mouseX - worldX * newScale;
-      scaleRef.current = newScale;
-      redraw();
-    });
+      // app.render(); // Optional
+      setRefresh((r) => r + 1); // redraw
+    };
 
-    app.stage.eventMode = "static";
-    app.stage.hitArea = app.screen;
-    app.stage.on("pointerdown", (e: any) => {
-      dragging = true;
-      lastX = e.screen.x;
-    });
-    app.stage.on("pointerup", () => (dragging = false));
-    app.stage.on("pointerupoutside", () => (dragging = false));
-    app.stage.on("pointermove", (e: any) => {
-      const x = e.data.global.x;
-      const y = e.data.global.y;
-      if (dragging) {
-        const dx = e.screen.x - lastX;
-        offsetXRef.current += dx;
-        lastX = e.screen.x;
-        redraw();
-      } else {
-        redraw({ x, y });
+    const onMouseUp = () => {
+      isDragging = false;
+    };
+
+    canvas.addEventListener("mousedown", onMouseDown);
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+
+    return () => {
+      canvas.removeEventListener("mousedown", onMouseDown);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  }, [data.length, dimensions.width]);
+
+  // Handle crosshair and tooltip
+  useEffect(() => {
+    const app = appRef.current;
+    if (!app || !crosshairRef.current) return;
+
+    const canvas = app.view;
+
+    const onMouseMove = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      const scaledSpacing = 10 * scaleRef.current;
+      const candleWidth = scaledSpacing * 0.6;
+      const index = Math.floor((mouseX - offsetXRef.current) / scaledSpacing);
+      if (index >= 0 && index < data.length && tooltipRef.current) {
+        const d = data[index];
+        const tooltip = tooltipRef.current;
+        tooltip.text = `O:${d.open} H:${d.high} L:${d.low} C:${d.close}`;
+        // tooltip.position.set(mouseX + 10, 10);
+        tooltip.position.set(80, 10);
+        tooltip.visible = true;
+      } else if (tooltipRef.current) {
+        tooltipRef.current.visible = false;
       }
+
+      const x = index * scaledSpacing + offsetXRef.current + candleWidth / 2;
+
+      const crosshair = crosshairRef.current;
+      crosshair.clear();
+      crosshair.lineStyle(1, 0xffffff, 0.5);
+      crosshair.moveTo(x, 0); // Vertical
+      crosshair.lineTo(x, dimensions.height);
+
+      crosshair.moveTo(0, mouseY); // Horizontal
+      crosshair.lineTo(dimensions.width, mouseY);
+    };
+
+    canvas.addEventListener("mousemove", onMouseMove);
+    canvas.addEventListener("mouseleave", () => {
+      crosshairRef.current?.clear();
+      // if (tooltipRef.current) {
+      //   tooltipRef.current.visible = false;
+      // }
     });
 
     return () => {
-      app.destroy(true, true);
-      if (chartRef.current) chartRef.current.innerHTML = "";
+      canvas.removeEventListener("mousemove", onMouseMove);
+      canvas.removeEventListener("mouseleave", () => {});
     };
-  }, [data, dimensions, chartType, indicator]);
+  }, [dimensions.height, dimensions.width]);
 
   return (
-    <div ref={containerRef} className="w-full h-full">
-      {/* <select
-        style={{ marginBottom: 10 }}
-        value={chartType}
-        onChange={(e) => setChartType(e.target.value as ChartType)}
-      >
-        {chartTypes.map((type) => (
-          <option key={type}>{type}</option>
-        ))}
-      </select>
-      <select
-        style={{ marginBottom: 10 }}
-        value={indicator || ""}
-        onChange={(e) => setIndicator(e.target.value || null)}
-      >
-        <option value="">None</option>
-        <option value="MA Cross">MA Cross</option>
-        <option value="McGinley Dynamic">McGinley Dynamic</option>
-        <option value="Median Price">Median Price</option>
-        <option value="Parabolic SAR">Parabolic SAR</option>
-        <option value="SuperTrend">SuperTrend</option>
-        <option value="Hull MA">Hull MA</option>
-        <option value="Aroon">Aroon</option>
-      </select> */}
-
+    <div ref={containerRef} style={{ width: "100%", height: "100%" }}>
       <div
         ref={chartRef}
-        style={{ width: "100%", height: dimensions.height + 30 }}
+        style={{
+          position: "relative",
+          width: dimensions.width,
+          height: dimensions.height,
+        }}
       />
     </div>
   );
